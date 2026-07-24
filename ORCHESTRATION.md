@@ -14,15 +14,19 @@ multi-model, or multi-agent task; do not load it for every trivial edit.
 1. **Use a strong orchestrator for substantial work.** Codex-led work routes
    planning, delegation, integration, and final synthesis through GPT-5.6 Sol;
    Claude-led work routes those stages through Fable. The entry engine remains
-   responsible for the result, but its orchestrator tier owns the decisions.
+   responsible for the result, and exactly one orchestrator owns the final
+   decisions. Ownership does not make the other orchestrator unavailable: Sol
+   may use Fable as a bounded complex-code or architecture reviewer, and Fable
+   may use Sol for the corresponding Codex-side expert judgement.
 2. **Use both providers from either entrypoint.** The orchestrator assigns the
    opposite provider at least one meaningful implementation, diagnosis, UX, or
    adversarial-review task. Both providers participate in every substantial
    task when available; entrypoint changes ownership, not the quality bar.
-3. **Delegate by task fit.** Sol/Fable plans and judges; Sol or Opus handles the
-   hardest implementation; Terra handles normal scoped coding and read-heavy
-   work; Luna/Sonnet handles mechanical support. The orchestrator verifies every
-   returned result before integrating it.
+3. **Delegate by task fit.** The owning Sol/Fable tier plans and judges; the
+   non-owning orchestrator can take a bounded expert or review task. Sol or Opus
+   handles the hardest implementation; Terra handles normal scoped coding and
+   read-heavy work; Luna/Sonnet handles mechanical support. The owner verifies
+   every returned result before integrating it.
 4. **Cross-check substantial work.** A second provider is required for
    consequential read-only analysis as well as non-trivial code and user-facing
    changes because independence catches a different class of mistakes. Skip it
@@ -81,7 +85,8 @@ For a substantial task, check the orchestrator before planning:
 - **Started in Codex:** switch the session to Sol for the full workflow. If the
   host cannot switch, invoke Sol once to plan and route, then invoke Sol again
   after worker/reviewer results to integrate and synthesize. Sol assigns
-  Claude/Opus a meaningful task and reconciles the cross-provider results.
+  Claude/Opus a meaningful normal task, or Fable a bounded complex review or
+  expert-judgement task, and reconciles the cross-provider results.
 - **Started in Claude:** switch to Fable for the full workflow. If the host
   cannot switch, invoke Fable once to plan and route, then invoke Fable again
   after worker/reviewer results to integrate and synthesize. Fable assigns
@@ -110,7 +115,7 @@ family or Codex version ships.
 | **Frontier** | GPT-5.6 Sol (`gpt-5.6-sol`) | Codex orchestrator; hardest implementation, diagnosis, architecture, security, integration, and final judgement. | Inventory, extraction, formatting, or other mechanical support work. |
 | **Everyday** | GPT-5.6 Terra (`gpt-5.6-terra`) | Repository mapping, read-heavy analysis, normal scoped implementation workstreams, tests, and supporting reviews. | Orchestration or final judgement on important work when Sol is available. |
 | **Efficient** | GPT-5.6 Luna (`gpt-5.6-luna`) | Clear, repeatable, low-risk work with explicit success criteria: extraction, classification, transformation, structured summaries, and mechanical edits. | Ambiguous architecture, security decisions, or final review of critical changes. |
-| **Claude orchestrator** | Fable 5 (`claude-fable-5`) | Claude orchestrator for planning, decomposition, integration, and final synthesis on substantial work. | Mechanical execution. |
+| **Claude orchestrator** | Fable 5 (`claude-fable-5`) | Claude orchestrator for planning, decomposition, integration, and final synthesis; bounded complex-code, architecture, or conflicting-findings review in a Sol-led workflow. | Mechanical execution or silently taking final ownership from Sol. |
 | **Claude coding/review** | Opus 4.8 (`claude-opus-4-8`) | Substantive implementation, frontend/UX work, and independent review of GPT-authored changes. | Mechanical bulk work. |
 | **Claude efficient** | Sonnet 5 (`claude-sonnet-5`) | Low-risk bulk reading, extraction, renames, and formatting. | Architecture or final judgement of important work. |
 
@@ -128,6 +133,7 @@ installed Claude Code environment before pinning them.
 | Planning, routing, integration, or synthesis for a substantial task | Sol `high` | Fable `high` | Required |
 | Contracts, permissions, funds, auth, security, migrations, costly architecture | Sol `xhigh`; `max` for the hardest remaining question | Fable or Opus at the strongest verified effort | Required at the strongest suitable tier |
 | Hard diagnosis after failed attempts or conflicting reviews | Sol `xhigh`; exceptionally `max` | Strongest verified Claude tier at high effort | Required independent second opinion |
+| Complex review of Codex-authored code, architecture, or conflicting findings | Sol owns integration | Fable `high`/`xhigh` as bounded independent reviewer | Required; Sol retains final ownership |
 | Large task that divides into independent workstreams | Sol `ultra`, only when supported and quality benefits from fan-out | Explicit bounded workflow | Required synthesis and opposite-provider final review |
 
 Claude remains the preferred frontend design and UX implementation engine when
@@ -180,11 +186,11 @@ When the user asks to make this setup available in every repo, run:
 ```
 
 The installer stores `AGENTS.md` and this playbook under `~/.codex`, installs
-`claude-review` under `~/.local/bin`, and adds the shared Codex rules import to
-`~/.claude/CLAUDE.md` exactly once. It preserves existing Claude-only
-instructions and backs up differing global Codex context before replacement.
-Verify the installed copies and fresh-shell helper resolution; do not merely
-return these commands to the user.
+`claude-review`, `fable-review`, and `sol-review` under `~/.local/bin`, and adds
+the shared Codex rules import to `~/.claude/CLAUDE.md` exactly once. It preserves
+existing Claude-only instructions and backs up differing global Codex context
+and helper files before replacement. Verify the installed copies and fresh-shell
+helper resolution; do not merely return these commands to the user.
 
 ## Configuration and commands
 
@@ -250,7 +256,7 @@ codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
   "Implement the scoped change, add focused tests, inspect the diff, and report verification."
 
 # Independent review of a critical Claude-authored change.
-codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
+sol-review \
   "Review the current diff adversarially for bugs, regressions, and missing tests."
 
 # Exceptional single-agent diagnosis.
@@ -265,6 +271,11 @@ codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="ultra"' \
 From Codex, call Claude as the independent provider:
 
 ```sh
+# Orchestration-grade review of complex Codex-authored code. Sol remains the
+# owning orchestrator and integrates Fable's findings.
+fable-review \
+  "Review the current change for cross-cutting code and architecture defects."
+
 # Preferred: preflight authentication, pin Opus/high, and keep the review
 # read-only. Pass a focused prompt when the default current-diff review is not
 # enough.
@@ -274,6 +285,8 @@ claude-review \
 
 # Repo-local fallback when the global helper is not installed.
 ./scripts/claude-review.sh
+CLAUDE_REVIEW_MODEL=claude-fable-5 ./scripts/claude-review.sh \
+  "Perform a bounded complex review; Sol retains final ownership."
 
 # Minimal direct fallback when neither helper is installed. Supply the relevant
 # diff or file paths in the prompt because this form does not collect evidence.
@@ -308,6 +321,16 @@ CLAUDE_REVIEW_EFFORT=xhigh \
   claude-review "Review this security-sensitive change."
 ```
 
+`fable-review` uses the same read-only evidence wrapper but defaults to
+`claude-fable-5`. It is a specialist hand-off, not a transfer of orchestration
+ownership. The active Sol orchestrator must validate and integrate its findings.
+If Fable access is rejected, fall back once to `claude-review` and report that
+the Fable route was skipped.
+
+`sol-review` is the symmetric Fable-to-Sol hand-off. It captures the same Git
+evidence, pins `gpt-5.6-sol` at high effort, runs Codex with
+`--sandbox read-only`, and encodes that Fable retains final ownership.
+
 ## When to use the opposite provider
 
 Use a cross-provider review after local verification. This is the default for
@@ -329,7 +352,10 @@ renames, generated files, and tiny documentation edits with no behavioral or
 factual consequence. Scale alone can make an otherwise mechanical task
 substantial.
 
-If GPT/Codex implemented, use Opus at high effort for the independent review. If
+If GPT/Codex implemented, use Opus at high effort for a normal independent
+review. Use Fable at `high` or `xhigh` when the review spans complex code,
+architecture, multiple workstreams, or conflicting findings; this is valid even
+inside a Sol-led workflow, and Sol retains final integration ownership. If
 Claude implemented, use Sol `high`, raising it to `xhigh` for critical work.
 Terra, Luna, and Sonnet do not count as the final independent reviewer when a
 stronger available model could materially improve the result.
@@ -392,25 +418,29 @@ is not a useful cross-check.
 
 ### Normal implementation
 
-1. The Sol/Fable orchestrator scopes the task and assigns non-overlapping work.
+1. The owning Sol/Fable orchestrator scopes the task and assigns
+   non-overlapping work.
 2. Terra `medium`/`high` or Opus `high` implements normal scoped work; Sol or
    Opus handles the hardest scope. The opposite provider receives at least one
    meaningful task, at minimum the adversarial review.
 3. The orchestrator inspects the integrated diff and runs project verification.
 4. If one provider authored the change, the opposite provider reviews it at high
-   effort. If both authored scopes, each provider reviews the other's scope.
+   effort. Use Fable for complex cross-cutting review of Sol/Codex-authored work
+   when its orchestration-grade judgement adds value. If both authored scopes,
+   each provider reviews the other's scope.
 5. The orchestrator resolves findings and reruns affected verification.
 
 ### Critical or hard change
 
-1. Sol or Fable plans at `xhigh` or the strongest equivalent effort with a
-   bounded task graph.
+1. The owning Sol or Fable tier plans at `xhigh` or the strongest equivalent
+   effort with a bounded task graph.
 2. Sol/Opus implements the decisive scopes; Terra handles bounded supporting
    workstreams, and Luna/Sonnet handles only mechanical support work.
 3. Run focused and broader verification.
 4. Each provider reviews the other provider's authored scopes adversarially at
-   `xhigh` or the strongest equivalent effort.
-5. The Sol/Fable orchestrator reconciles findings and makes the final
+   `xhigh` or the strongest equivalent effort. In a Sol-led run, Fable can own
+   this bounded review without taking over final synthesis.
+5. The original owning orchestrator reconciles findings and makes the final
    evidence-based judgement at `xhigh` or the strongest equivalent effort. Use
    `max` only for a remaining hard single-agent question; use `ultra` only if the
    work genuinely benefits from bounded parallelism.

@@ -13,7 +13,9 @@ reliable read-only Claude review hand-off from Codex.
 | `CLAUDE.md` | Thin Claude Code entry point that imports `AGENTS.md`. |
 | `ORCHESTRATION.md` | Full model-routing, effort, delegation, review, and verification playbook. |
 | `scripts/install-global.sh` | Idempotent global installer for both Codex and Claude. |
-| `scripts/claude-review.sh` | Read-only Opus review hand-off for Codex-led work. |
+| `scripts/claude-review.sh` | Read-only Opus or Fable review hand-off for Codex-led work. |
+| `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off for Fable-led work. |
+| `scripts/test.sh` | Isolated installer and model-dispatch regression tests. |
 
 ## Install globally
 
@@ -28,7 +30,8 @@ cd multi-provider-orchestration
 The installer:
 
 - copies `AGENTS.md` and `ORCHESTRATION.md` into `~/.codex`;
-- installs `claude-review` into `~/.local/bin`;
+- installs `claude-review`, `fable-review`, and `sol-review` into
+  `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content;
 - adds `@~/.codex/AGENTS.md` to Claude's rules exactly once;
 - backs up differing global Codex context files before replacing them;
@@ -53,8 +56,9 @@ Copy the shared files into a repository:
 ```sh
 cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
 mkdir -p /path/to/repo/scripts
-cp scripts/claude-review.sh /path/to/repo/scripts/
-chmod +x /path/to/repo/scripts/claude-review.sh
+cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
+chmod +x /path/to/repo/scripts/claude-review.sh \
+  /path/to/repo/scripts/sol-review.sh
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
@@ -72,6 +76,27 @@ The helper checks the Claude CLI and authentication, captures staged and
 unstaged diffs with read-only Git commands, pins Opus at high effort by default,
 and gives Claude only `Read`, `Grep`, and `Glob`.
 
+For complex code, architecture, multi-workstream, or conflicting-findings review
+inside a Sol-led workflow, call Fable through the same read-only wrapper:
+
+```sh
+fable-review \
+  "Review the current change for cross-cutting code and architecture defects."
+```
+
+Sol remains the owning orchestrator and validates and integrates Fable's
+findings. Likewise, a Fable-led workflow can use Sol as a bounded complex
+reviewer without transferring final ownership.
+
+```sh
+sol-review \
+  "Review the current change for cross-cutting code and architecture defects."
+```
+
+`sol-review` captures the diff, pins GPT-5.6 Sol at high effort, and enforces the
+Codex `read-only` sandbox. If a requested Fable route is unavailable, fall back
+once to `claude-review` and report that Fable review was skipped.
+
 Override the route only after verifying model availability:
 
 ```sh
@@ -83,9 +108,7 @@ CLAUDE_REVIEW_EFFORT=xhigh \
 ## Verify changes
 
 ```sh
-sh -n scripts/install-global.sh
-sh -n scripts/claude-review.sh
-git diff --check
+./scripts/test.sh
 ```
 
 Model names, access, and effort levels can change. Recheck the live CLI

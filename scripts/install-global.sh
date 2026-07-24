@@ -37,11 +37,21 @@ mkdir -p "$codex_dir" "$claude_dir" "$local_bin_dir"
 backup_if_different "$repo_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 backup_if_different \
   "$repo_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
+backup_if_different \
+  "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
+backup_if_different \
+  "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
+backup_if_different \
+  "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 
 install -m 644 "$repo_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 install -m 644 "$repo_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
 install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/claude-review"
+install -m 755 "$repo_dir/scripts/claude-review.sh" \
+  "$local_bin_dir/fable-review"
+install -m 755 "$repo_dir/scripts/sol-review.sh" \
+  "$local_bin_dir/sol-review"
 
 touch "$claude_rules"
 if ! grep -qxF "$shared_import" "$claude_rules"; then
@@ -52,6 +62,9 @@ verify_copy "$repo_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 verify_copy "$repo_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
+verify_copy \
+  "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
+verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 test "$(grep -c -xF "$shared_import" "$claude_rules")" -eq 1
 
 printf '%s\n' \
@@ -59,6 +72,8 @@ printf '%s\n' \
   "  $codex_dir/AGENTS.md" \
   "  $codex_dir/ORCHESTRATION.md" \
   "  $local_bin_dir/claude-review" \
+  "  $local_bin_dir/fable-review" \
+  "  $local_bin_dir/sol-review" \
   "Claude import preserved in $claude_rules"
 
 fresh_helper=''
@@ -71,5 +86,31 @@ if [ "$fresh_helper" = "$local_bin_dir/claude-review" ]; then
 else
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/claude-review." \
+    "Add $local_bin_dir to PATH in your shell configuration." >&2
+fi
+
+fresh_fable=''
+if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
+  fresh_fable="$("$SHELL" -lic 'command -v fable-review' 2>/dev/null || true)"
+fi
+
+if [ "$fresh_fable" = "$local_bin_dir/fable-review" ]; then
+  printf 'Fresh shell resolves fable-review at %s\n' "$fresh_fable"
+else
+  printf '%s\n' \
+    "Warning: a fresh shell does not resolve $local_bin_dir/fable-review." \
+    "Add $local_bin_dir to PATH in your shell configuration." >&2
+fi
+
+fresh_sol=''
+if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
+  fresh_sol="$("$SHELL" -lic 'command -v sol-review' 2>/dev/null || true)"
+fi
+
+if [ "$fresh_sol" = "$local_bin_dir/sol-review" ]; then
+  printf 'Fresh shell resolves sol-review at %s\n' "$fresh_sol"
+else
+  printf '%s\n' \
+    "Warning: a fresh shell does not resolve $local_bin_dir/sol-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi

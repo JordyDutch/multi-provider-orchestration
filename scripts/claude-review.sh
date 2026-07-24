@@ -2,9 +2,24 @@
 
 set -eu
 
-model="${CLAUDE_REVIEW_MODEL:-claude-opus-4-8}"
+case "$(basename "$0")" in
+  fable-review)
+    default_model="claude-fable-5"
+    ;;
+  *)
+    default_model="claude-opus-4-8"
+    ;;
+esac
+
+model="${CLAUDE_REVIEW_MODEL:-$default_model}"
 effort="${CLAUDE_REVIEW_EFFORT:-high}"
 prompt="${*:-Review the current change adversarially for concrete bugs, regressions, and missing tests. Return findings ordered by severity with file and line evidence. Do not edit files.}"
+
+if [ "$model" = "claude-fable-5" ]; then
+  role_preamble="You are a bounded independent reviewer in a Sol-led workflow. Sol retains final integration and synthesis ownership. Do not widen the task or claim final ownership."
+else
+  role_preamble="You are a bounded independent Claude reviewer. The calling orchestrator retains final integration and synthesis ownership. Do not widen the task or claim final ownership."
+fi
 
 claude_bin="$(command -v claude 2>/dev/null || true)"
 if [ -z "$claude_bin" ] && [ -x "$HOME/.local/bin/claude" ]; then
@@ -33,6 +48,7 @@ fi
 echo "Running read-only Claude review with $model at $effort effort..." >&2
 
 {
+  printf '%s\n\n' "$role_preamble"
   printf '%s\n\n' "$prompt"
   printf '%s\n' \
     "The repository evidence below was captured by the read-only wrapper." \

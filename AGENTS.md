@@ -53,11 +53,14 @@ version is:
   worker/reviewer results for final synthesis. If that is unsupported, use the
   strongest available model and report the limitation.
 - **Use both providers from either entrypoint.** Starting in Codex means Sol
-  orchestrates and gives Claude/Opus at least one meaningful implementation,
-  diagnosis, UX, or review task. Starting in Claude means Fable orchestrates and
-  gives Codex/Terra/Sol at least one meaningful task. For every substantial
-  task, both providers participate when installed and authenticated; a
-  rubber-stamp hand-off does not count.
+  orchestrates and gives Claude/Fable or Opus at least one meaningful
+  implementation, diagnosis, UX, or review task. Starting in Claude means Fable
+  orchestrates and gives Codex/Terra/Sol at least one meaningful task. The
+  non-owning orchestrator remains available as a specialist: Sol may ask Fable
+  for a complex independent code or architecture review, and Fable may ask Sol
+  for the corresponding Codex-side judgement. For every substantial task, both
+  providers participate when installed and authenticated; a rubber-stamp
+  hand-off does not count.
 - **Use the GPT-5.6 family deliberately.** The verified Codex IDs are
   `gpt-5.6-sol` for orchestration and the hardest implementation or judgement;
   `gpt-5.6-terra` for read-heavy work, normal scoped implementation, and tests;
@@ -71,25 +74,32 @@ version is:
   single-agent problems. Use `ultra` only as a top-level, bounded multi-agent run
   when the task divides cleanly; never nest it, and verify that the account
   supports it.
-- **Cross-check substantial work independently.** If GPT/Codex implements, use a
-  strong Claude reviewer; if Claude implements, use Sol. Require the opposite
+- **Cross-check substantial work independently.** If GPT/Codex implements, use
+  Opus for normal strong review or Fable when the review needs
+  orchestration-grade reasoning across complex code, architecture, or
+  conflicting findings. If Claude implements, use Sol. Require the opposite
   provider for every substantial task, including read-only audits, research,
   diagnosis, planning, code, and user-facing changes. Use its strongest suitable
   tier for contracts, permissions, funds, security, data-loss risk, and
   costly-to-reverse architecture. Skip the second provider only for bounded,
   deterministic work with no behavioral or factual consequence, or when it is
   unavailable.
-- **Delegate by fit.** Sol/Fable owns the plan, routing, integration, and final
-  decision. Use Terra for normal scoped backend work, tests, and repository
-  analysis; Luna/Sonnet for mechanical support; Opus for complex implementation,
-  frontend, and UX; and Sol for the hardest technical or security-critical
-  worker tasks. The orchestrator verifies every returned result before use.
+- **Delegate by fit without locking tiers to ownership.** Exactly one
+  orchestrator owns the plan, integration, and final decision, but the other
+  provider's orchestrator may serve as a bounded expert or reviewer. Use Terra
+  for normal scoped backend work, tests, and repository analysis; Luna/Sonnet
+  for mechanical support; Opus for complex implementation, frontend, and UX;
+  Fable for complex cross-cutting Claude-side review; and Sol for the hardest
+  technical or security-critical Codex-side work. The owning orchestrator
+  verifies every returned result before use.
 - **Keep hand-offs compact and independent.** Send the smallest relevant diff,
   files, constraints, and failing output; remove secrets first. Ask the reviewer
   to find defects and missing tests, not to agree. Parallel writers need
   separate worktrees or explicitly non-overlapping file ownership. From Codex,
   prefer `claude-review` when installed: it preflights Claude authentication,
-  captures the current diff, and keeps the review read-only.
+  captures the current diff, and keeps the review read-only. Use
+  `fable-review` when the independent review needs Fable's cross-cutting
+  orchestration judgement.
 - **Optimize routing without weakening the result.** Keep planning,
   implementation, hard diagnosis, and final review on the tier they need. Avoid
   repeated scouting, oversized context transfers, overlapping agents, and
@@ -105,9 +115,9 @@ route and report which cross-check was skipped.
   the commands.
 - The installer makes the same baseline available in every user repo by copying
   the shared rules and on-demand context into `~/.codex`, installing
-  `claude-review` into `~/.local/bin`, and adding
+  `claude-review`, `fable-review`, and `sol-review` into `~/.local/bin`, and adding
   `@~/.codex/AGENTS.md` to `~/.claude/CLAUDE.md`.
 - Preserve all existing Claude-only instructions. The shared import must occur
   exactly once; never replace the whole Claude rules file.
 - Verify the installed copies byte-for-byte and confirm a fresh shell resolves
-  the helper before reporting success.
+  all three review helpers before reporting success.

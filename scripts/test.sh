@@ -1,0 +1,90 @@
+#!/bin/sh
+
+set -eu
+
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+repo_dir="$(dirname "$script_dir")"
+test_home="$(mktemp -d)"
+fake_bin="$test_home/fake-bin"
+
+cleanup() {
+  rm -r "$test_home"
+}
+
+trap cleanup EXIT HUP INT TERM
+
+sh -n "$repo_dir/scripts/install-global.sh"
+sh -n "$repo_dir/scripts/claude-review.sh"
+sh -n "$repo_dir/scripts/sol-review.sh"
+git -C "$repo_dir" diff --check
+
+HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
+HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
+
+cmp -s "$repo_dir/AGENTS.md" "$test_home/.codex/AGENTS.md"
+cmp -s \
+  "$repo_dir/ORCHESTRATION.md" "$test_home/.codex/ORCHESTRATION.md"
+cmp -s \
+  "$repo_dir/scripts/claude-review.sh" \
+  "$test_home/.local/bin/claude-review"
+cmp -s \
+  "$repo_dir/scripts/claude-review.sh" \
+  "$test_home/.local/bin/fable-review"
+cmp -s \
+  "$repo_dir/scripts/sol-review.sh" \
+  "$test_home/.local/bin/sol-review"
+test "$(grep -c -xF '@~/.codex/AGENTS.md' \
+  "$test_home/.claude/CLAUDE.md")" -eq 1
+
+mkdir -p "$fake_bin"
+
+printf '%s\n' \
+  '#!/bin/sh' \
+  'if [ "$1" = "auth" ] && [ "$2" = "status" ]; then' \
+  '  printf "%s\n" "{\"loggedIn\": true}"' \
+  '  exit 0' \
+  'fi' \
+  'printf "%s\n" "$@" >"$CAPTURE_ARGS"' \
+  'cat >"$CAPTURE_STDIN"' >"$fake_bin/claude"
+
+printf '%s\n' \
+  '#!/bin/sh' \
+  'if [ "$1" = "login" ] && [ "$2" = "status" ]; then' \
+  '  exit 0' \
+  'fi' \
+  'printf "%s\n" "$@" >"$CAPTURE_ARGS"' \
+  'cat >"$CAPTURE_STDIN"' >"$fake_bin/codex"
+
+chmod +x "$fake_bin/claude" "$fake_bin/codex"
+cp "$repo_dir/scripts/claude-review.sh" "$fake_bin/claude-review"
+cp "$repo_dir/scripts/claude-review.sh" "$fake_bin/fable-review"
+chmod +x "$fake_bin/claude-review" "$fake_bin/fable-review"
+
+PATH="$fake_bin:/usr/bin:/bin" \
+  HOME="$test_home" \
+  CAPTURE_ARGS="$test_home/fable.args" \
+  CAPTURE_STDIN="$test_home/fable.stdin" \
+  "$fake_bin/fable-review" "Review only." >/dev/null
+
+grep -qxF "claude-fable-5" "$test_home/fable.args"
+grep -qF "Sol retains final integration" "$test_home/fable.stdin"
+
+PATH="$fake_bin:/usr/bin:/bin" \
+  HOME="$test_home" \
+  CAPTURE_ARGS="$test_home/opus.args" \
+  CAPTURE_STDIN="$test_home/opus.stdin" \
+  "$fake_bin/claude-review" "Review only." >/dev/null
+
+grep -qxF "claude-opus-4-8" "$test_home/opus.args"
+
+PATH="$fake_bin:/usr/bin:/bin" \
+  HOME="$test_home" \
+  CAPTURE_ARGS="$test_home/sol.args" \
+  CAPTURE_STDIN="$test_home/sol.stdin" \
+  "$repo_dir/scripts/sol-review.sh" "Review only." >/dev/null
+
+grep -qxF "gpt-5.6-sol" "$test_home/sol.args"
+grep -qxF "read-only" "$test_home/sol.args"
+grep -qF "Fable retains final integration" "$test_home/sol.stdin"
+
+printf '%s\n' "All orchestration tests passed."
