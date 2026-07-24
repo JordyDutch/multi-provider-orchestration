@@ -75,7 +75,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/opus.stdin" \
   "$fake_bin/claude-review" "Review only." >/dev/null
 
-grep -qxF "claude-opus-4-8" "$test_home/opus.args"
+grep -qxF "claude-opus-5" "$test_home/opus.args"
 
 PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \

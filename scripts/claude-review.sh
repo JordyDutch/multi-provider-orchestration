@@ -7,7 +7,7 @@ case "$(basename "$0")" in
     default_model="claude-fable-5"
     ;;
   *)
-    default_model="claude-opus-4-8"
+    default_model="claude-opus-5"
     ;;
 esac
 

@@ -100,7 +100,7 @@ once to `claude-review` and report that Fable review was skipped.
 Override the route only after verifying model availability:
 
 ```sh
-CLAUDE_REVIEW_MODEL=claude-opus-4-8 \
+CLAUDE_REVIEW_MODEL=claude-opus-5 \
 CLAUDE_REVIEW_EFFORT=xhigh \
   claude-review "Review this security-sensitive change."
 ```

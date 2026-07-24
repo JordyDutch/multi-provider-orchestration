@@ -116,11 +116,12 @@ family or Codex version ships.
 | **Everyday** | GPT-5.6 Terra (`gpt-5.6-terra`) | Repository mapping, read-heavy analysis, normal scoped implementation workstreams, tests, and supporting reviews. | Orchestration or final judgement on important work when Sol is available. |
 | **Efficient** | GPT-5.6 Luna (`gpt-5.6-luna`) | Clear, repeatable, low-risk work with explicit success criteria: extraction, classification, transformation, structured summaries, and mechanical edits. | Ambiguous architecture, security decisions, or final review of critical changes. |
 | **Claude orchestrator** | Fable 5 (`claude-fable-5`) | Claude orchestrator for planning, decomposition, integration, and final synthesis; bounded complex-code, architecture, or conflicting-findings review in a Sol-led workflow. | Mechanical execution or silently taking final ownership from Sol. |
-| **Claude coding/review** | Opus 4.8 (`claude-opus-4-8`) | Substantive implementation, frontend/UX work, and independent review of GPT-authored changes. | Mechanical bulk work. |
+| **Claude coding/review** | Opus 5 (`claude-opus-5`) | Substantive implementation, frontend/UX work, and independent review of GPT-authored changes. | Mechanical bulk work. |
 | **Claude efficient** | Sonnet 5 (`claude-sonnet-5`) | Low-risk bulk reading, extraction, renames, and formatting. | Architecture or final judgement of important work. |
 
-Claude model names and availability are also volatile. Verify them in the
-installed Claude Code environment before pinning them.
+Claude model names and availability are also volatile. `claude-opus-5` was
+live-verified on 2026-07-24 against Claude Code 2.1.219. Verify the other Claude
+rows in the installed Claude Code environment before pinning them.
 
 ### Default routes by task
 
@@ -290,12 +291,12 @@ CLAUDE_REVIEW_MODEL=claude-fable-5 ./scripts/claude-review.sh \
 
 # Minimal direct fallback when neither helper is installed. Supply the relevant
 # diff or file paths in the prompt because this form does not collect evidence.
-claude -p --model claude-opus-4-8 --effort high \
+claude -p --model claude-opus-5 --effort high \
   --permission-mode dontAsk \
   "Review the current change for concrete bugs, regressions, and missing tests."
 
 # Frontend and UX judgement.
-claude -p --model claude-opus-4-8 --effort high \
+claude -p --model claude-opus-5 --effort high \
   "Review the affected flow for UX, responsive behavior, and accessibility."
 
 # Bounded bulk work.
@@ -316,7 +317,7 @@ or API failure is returned unchanged by Claude Code, so do not misreport it as a
 completed review. Override the pinned route only after verifying availability:
 
 ```sh
-CLAUDE_REVIEW_MODEL=claude-opus-4-8 \
+CLAUDE_REVIEW_MODEL=claude-opus-5 \
 CLAUDE_REVIEW_EFFORT=xhigh \
   claude-review "Review this security-sensitive change."
 ```
