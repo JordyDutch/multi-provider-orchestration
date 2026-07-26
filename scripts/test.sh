@@ -17,6 +17,18 @@ sh -n "$repo_dir/scripts/install-global.sh"
 sh -n "$repo_dir/scripts/claude-review.sh"
 sh -n "$repo_dir/scripts/sol-review.sh"
 git -C "$repo_dir" diff --check
+grep -qF "**Parallelize independent work proactively.**" \
+  "$repo_dir/AGENTS.md"
+grep -qF "do not fan out again" "$repo_dir/AGENTS.md"
+grep -qF "Collect every spawned process or agent result" \
+  "$repo_dir/AGENTS.md"
+grep -qF "## Parallel work safety" "$repo_dir/ORCHESTRATION.md"
+grep -qF "launch them together instead of waiting" \
+  "$repo_dir/ORCHESTRATION.md"
+grep -qF "Never let two agents edit the same file concurrently" \
+  "$repo_dir/ORCHESTRATION.md"
+grep -qF "Reap every process, collect every real exit status" \
+  "$repo_dir/ORCHESTRATION.md"
 
 HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
 HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null

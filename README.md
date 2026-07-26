@@ -2,8 +2,9 @@
 
 A portable, provider-neutral setup for combining OpenAI Codex and Claude Code
 in software projects. It defines strong orchestrator and worker routes,
-opposite-provider review, bounded delegation, verification requirements, and a
-reliable read-only Claude review hand-off from Codex.
+opposite-provider review, proactive bounded parallelism for independent
+workstreams, verification requirements, and a reliable read-only Claude review
+hand-off from Codex.
 
 ## Included
 

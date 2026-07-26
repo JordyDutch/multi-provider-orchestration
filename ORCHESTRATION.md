@@ -34,8 +34,12 @@ multi-model, or multi-agent task; do not load it for every trivial edit.
    or when the provider is unavailable.
 5. **Verification beats extra sampling.** Run the relevant tests and inspect the
    actual diff before asking the reviewer to judge the result.
-6. **Bound parallelism.** Fan out only independent work with clear ownership,
-   small return formats, and a fixed stopping condition.
+6. **Use bounded parallelism proactively.** When two or more meaningful
+   workstreams can proceed independently and concurrency will shorten the
+   critical path, start agents and/or separate terminal processes together.
+   Give them clear ownership, small return formats, and a fixed stopping
+   condition; stay sequential when dependencies or coordination overhead erase
+   the speed benefit.
 
 ## Step 0: verify what is available
 
@@ -399,11 +403,33 @@ is not a useful cross-check.
 
 ## Parallel work safety
 
-- Multiple read-only scouts or reviewers may share a worktree.
+- After scoping, identify the dependency graph. If at least two meaningful
+  workstreams have no dependency edge between them and concurrency is likely to
+  reduce wall-clock time, launch them together instead of waiting for one to
+  finish before starting the next.
+- Use agents for independent repository areas, implementation scopes, research,
+  diagnosis, or reviews. Use separate terminal processes for independent
+  long-running commands only when they do not contend for the same mutable
+  artifacts, ports, databases, caches, or generated output.
+- Use the smallest useful fan-out and never spawn workers merely to increase the
+  agent count. Factor in startup time, context transfer, compute limits, and
+  integration cost; a short or tightly sequential task should remain
+  single-driver.
+- Delegated workers must not create further workers unless the owning
+  orchestrator explicitly authorizes a bounded second level. Automatic
+  delegation such as `ultra` is top-level only and must never be nested.
+- Multiple strictly read-only scouts or reviewers may share a worktree only
+  when their tools and commands cannot mutate the Git index, lockfiles, caches,
+  or generated output. Use isolated worktrees when that guarantee does not hold.
 - Parallel writers must use separate worktrees or explicitly non-overlapping
   file ownership. Never let two agents edit the same file concurrently.
 - Give each worker a bounded output contract. Prefer a short findings list,
   patch, schema, or test result over a prose transcript.
+- Start independent verification commands concurrently only when the commands
+  are safe to run together. Reap every process, collect every real exit status,
+  and terminate or report anything still running before synthesis. Otherwise
+  sequence the commands explicitly and explain the shared-state constraint in
+  the final report.
 - The entrypoint's Sol/Fable orchestrator alone integrates overlapping ideas,
   resolves disagreements, and runs final verification for substantial work.
 

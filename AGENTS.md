@@ -92,6 +92,17 @@ version is:
   Fable for complex cross-cutting Claude-side review; and Sol for the hardest
   technical or security-critical Codex-side work. The owning orchestrator
   verifies every returned result before use.
+- **Parallelize independent work proactively.** When a task contains two or
+  more meaningful workstreams that can proceed without waiting on each other,
+  start bounded agents and/or separate terminal processes concurrently when
+  that will reduce wall-clock time. Give each worker explicit ownership, keep
+  writes non-overlapping, cap fan-out to useful available capacity, and retain
+  one orchestrator for integration and final verification. Delegated workers
+  execute their assigned scope and do not fan out again unless the orchestrator
+  explicitly authorizes bounded subdelegation. Stay sequential for dependencies,
+  same-file edits, trivial tasks, or work whose coordination cost is likely to
+  exceed the time saved. Collect every spawned process or agent result and
+  report failures before declaring completion.
 - **Keep hand-offs compact and independent.** Send the smallest relevant diff,
   files, constraints, and failing output; remove secrets first. Ask the reviewer
   to find defects and missing tests, not to agree. Parallel writers need
