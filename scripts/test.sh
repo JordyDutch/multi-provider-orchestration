@@ -22,6 +22,10 @@ grep -qF "**Parallelize independent work proactively.**" \
 grep -qF "do not fan out again" "$repo_dir/AGENTS.md"
 grep -qF "Collect every spawned process or agent result" \
   "$repo_dir/AGENTS.md"
+grep -qF "Every Opus route means Claude Opus 5" "$repo_dir/AGENTS.md"
+grep -qF "no stdout while its process is alive is not evidence" \
+  "$repo_dir/AGENTS.md"
+grep -qF "Every unqualified Opus reference" "$repo_dir/ORCHESTRATION.md"
 grep -qF "## Parallel work safety" "$repo_dir/ORCHESTRATION.md"
 grep -qF "launch them together instead of waiting" \
   "$repo_dir/ORCHESTRATION.md"
@@ -79,6 +83,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   "$fake_bin/fable-review" "Review only." >/dev/null
 
 grep -qxF "claude-fable-5" "$test_home/fable.args"
+grep -qxF "high" "$test_home/fable.args"
 grep -qF "Sol retains final integration" "$test_home/fable.stdin"
 
 PATH="$fake_bin:/usr/bin:/bin" \
@@ -88,6 +93,24 @@ PATH="$fake_bin:/usr/bin:/bin" \
   "$fake_bin/claude-review" "Review only." >/dev/null
 
 grep -qxF "claude-opus-5" "$test_home/opus.args"
+grep -qxF "medium" "$test_home/opus.args"
+grep -qF "smallest additional repository context needed" \
+  "$test_home/opus.stdin"
+
+if PATH="$fake_bin:/usr/bin:/bin" \
+  HOME="$test_home" \
+  CLAUDE_REVIEW_MODEL=claude-opus-4-8 \
+  CAPTURE_ARGS="$test_home/old-opus.args" \
+  CAPTURE_STDIN="$test_home/old-opus.stdin" \
+  "$fake_bin/claude-review" "Review only." \
+  >"$test_home/old-opus.stdout" 2>"$test_home/old-opus.stderr"; then
+  printf '%s\n' "Expected an older Opus model ID to be rejected." >&2
+  exit 1
+fi
+
+grep -qF "model must be pinned to claude-opus-5 or claude-fable-5" \
+  "$test_home/old-opus.stderr"
+test ! -e "$test_home/old-opus.args"
 
 PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \

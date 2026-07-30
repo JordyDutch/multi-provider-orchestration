@@ -53,9 +53,10 @@ version is:
   worker/reviewer results for final synthesis. If that is unsupported, use the
   strongest available model and report the limitation.
 - **Use both providers from either entrypoint.** Starting in Codex means Sol
-  orchestrates and gives Claude/Fable or Opus at least one meaningful
-  implementation, diagnosis, UX, or review task. Starting in Claude means Fable
-  orchestrates and gives Codex/Terra/Sol at least one meaningful task. The
+  orchestrates and gives Claude via Fable 5 or Opus 5 (`claude-opus-5`) at least
+  one meaningful implementation, diagnosis, UX, or review task. Starting in
+  Claude means Fable orchestrates and gives Codex/Terra/Sol at least one
+  meaningful task. The
   non-owning orchestrator remains available as a specialist: Sol may ask Fable
   for a complex independent code or architecture review, and Fable may ask Sol
   for the corresponding Codex-side judgement. For every substantial task, both
@@ -66,6 +67,19 @@ version is:
   `gpt-5.6-terra` for read-heavy work, normal scoped implementation, and tests;
   and `gpt-5.6-luna` for clear, repeatable, mechanical work. Use the full ID so
   routing is explicit. Reverify when a newer family ships.
+- **Always pin Claude Opus to Opus 5.** Every Opus route means Claude Opus 5
+  with the exact model ID `claude-opus-5`. Never use a bare `opus` alias, a
+  `latest` alias, or an older Opus model ID. If `claude-opus-5` is unavailable,
+  report that the Opus route was skipped instead of silently substituting an
+  older Opus release.
+- **Treat silent Opus review output correctly.** `claude-review` buffers its
+  final text, so no stdout while its process is alive is not evidence of a
+  hang. Use `medium` effort for a normal review, keep polling the existing
+  process, and do not launch a duplicate. Reserve `high` or `xhigh` for
+  critical, security-sensitive, or genuinely complex review. After a real
+  bounded timeout, retry Opus 5 once with only the exact diff and no repository
+  tools; if that also fails, use Fable 5 and report the fallback. Never replace
+  Opus 5 with an older Opus release.
 - **Match effort to consequence.** Luna `low`/`medium` handles inventory,
   extraction, and mechanical edits. Terra `medium`/`high` handles repository
   mapping and well-bounded worker tasks. Use Sol `high` for substantial
@@ -75,23 +89,23 @@ version is:
   when the task divides cleanly; never nest it, and verify that the account
   supports it.
 - **Cross-check substantial work independently.** If GPT/Codex implements, use
-  Opus for normal strong review or Fable when the review needs
-  orchestration-grade reasoning across complex code, architecture, or
+  Opus 5 (`claude-opus-5`) for normal strong review or Fable when the review
+  needs orchestration-grade reasoning across complex code, architecture, or
   conflicting findings. If Claude implements, use Sol. Require the opposite
   provider for every substantial task, including read-only audits, research,
-  diagnosis, planning, code, and user-facing changes. Use its strongest suitable
-  tier for contracts, permissions, funds, security, data-loss risk, and
-  costly-to-reverse architecture. Skip the second provider only for bounded,
-  deterministic work with no behavioral or factual consequence, or when it is
-  unavailable.
+  diagnosis, planning, code, and user-facing changes. Use its strongest
+  suitable tier for contracts, permissions, funds, security, data-loss risk,
+  and costly-to-reverse architecture. Skip the second provider only for
+  bounded, deterministic work with no behavioral or factual consequence, or
+  when it is unavailable.
 - **Delegate by fit without locking tiers to ownership.** Exactly one
   orchestrator owns the plan, integration, and final decision, but the other
   provider's orchestrator may serve as a bounded expert or reviewer. Use Terra
   for normal scoped backend work, tests, and repository analysis; Luna/Sonnet
-  for mechanical support; Opus for complex implementation, frontend, and UX;
-  Fable for complex cross-cutting Claude-side review; and Sol for the hardest
-  technical or security-critical Codex-side work. The owning orchestrator
-  verifies every returned result before use.
+  for mechanical support; Opus 5 (`claude-opus-5`) for complex implementation,
+  frontend, and UX; Fable for complex cross-cutting Claude-side review; and Sol
+  for the hardest technical or security-critical Codex-side work. The owning
+  orchestrator verifies every returned result before use.
 - **Parallelize independent work proactively.** When a task contains two or
   more meaningful workstreams that can proceed without waiting on each other,
   start bounded agents and/or separate terminal processes concurrently when

@@ -23,10 +23,10 @@ multi-model, or multi-agent task; do not load it for every trivial edit.
    adversarial-review task. Both providers participate in every substantial
    task when available; entrypoint changes ownership, not the quality bar.
 3. **Delegate by task fit.** The owning Sol/Fable tier plans and judges; the
-   non-owning orchestrator can take a bounded expert or review task. Sol or Opus
-   handles the hardest implementation; Terra handles normal scoped coding and
-   read-heavy work; Luna/Sonnet handles mechanical support. The owner verifies
-   every returned result before integrating it.
+   non-owning orchestrator can take a bounded expert or review task. Sol or
+   Opus 5 (`claude-opus-5`) handles the hardest implementation; Terra handles
+   normal scoped coding and read-heavy work; Luna/Sonnet handles mechanical
+   support. The owner verifies every returned result before integrating it.
 4. **Cross-check substantial work.** A second provider is required for
    consequential read-only analysis as well as non-trivial code and user-facing
    changes because independence catches a different class of mistakes. Skip it
@@ -89,8 +89,9 @@ For a substantial task, check the orchestrator before planning:
 - **Started in Codex:** switch the session to Sol for the full workflow. If the
   host cannot switch, invoke Sol once to plan and route, then invoke Sol again
   after worker/reviewer results to integrate and synthesize. Sol assigns
-  Claude/Opus a meaningful normal task, or Fable a bounded complex review or
-  expert-judgement task, and reconciles the cross-provider results.
+  Claude via Opus 5 (`claude-opus-5`) a meaningful normal task, or Fable a
+  bounded complex review or expert-judgement task, and reconciles the
+  cross-provider results.
 - **Started in Claude:** switch to Fable for the full workflow. If the host
   cannot switch, invoke Fable once to plan and route, then invoke Fable again
   after worker/reviewer results to integrate and synthesize. Fable assigns
@@ -114,6 +115,11 @@ The GPT-5.6 baseline below was live-verified on 2026-07-10. Use full model IDs s
 the selected capability tier is explicit, and reverify the catalog when a newer
 family or Codex version ships.
 
+Every unqualified Opus reference in this playbook means Claude Opus 5 with the
+exact model ID `claude-opus-5`. Never use a bare `opus` alias, a `latest` alias,
+or an older Opus model ID. If that exact model is unavailable, report the route
+as skipped instead of silently substituting an older Opus release.
+
 | Tier | Model | Best use | Avoid as default for |
 | ------ | ------- | ---------- | ---------------------- |
 | **Frontier** | GPT-5.6 Sol (`gpt-5.6-sol`) | Codex orchestrator; hardest implementation, diagnosis, architecture, security, integration, and final judgement. | Inventory, extraction, formatting, or other mechanical support work. |
@@ -124,7 +130,7 @@ family or Codex version ships.
 | **Claude efficient** | Sonnet 5 (`claude-sonnet-5`) | Low-risk bulk reading, extraction, renames, and formatting. | Architecture or final judgement of important work. |
 
 Claude model names and availability are also volatile. `claude-opus-5` was
-live-verified on 2026-07-24 against Claude Code 2.1.219. Verify the other Claude
+live-verified on 2026-07-29 against Claude Code 2.1.220. Verify the other Claude
 rows in the installed Claude Code environment before pinning them.
 
 ### Default routes by task
@@ -132,11 +138,11 @@ rows in the installed Claude Code environment before pinning them.
 | Work | Codex route | Claude route | Opposite-provider review |
 | ------ | ------------- | -------------- | -------------------------- |
 | Bounded deterministic inventory, extraction, or mechanical edit with no behavioral/factual consequence | Luna `low`; Terra `medium` if judgement is needed | Sonnet `low`/`medium` | No |
-| Substantial audit, research, repository analysis, or planning | Terra `high` workers; Sol orchestrates and synthesizes | Opus `high` workers; Fable orchestrates and synthesizes | Required |
-| Small, well-tested implementation | Terra `medium`/`high`; Sol integrates | Opus `medium`/`high`; Fable integrates | Required unless bounded, deterministic, and without behavioral/factual consequence |
-| Substantive implementation, tests, or debugging | Terra `medium` for normal scoped work, `high` when difficult; Sol `high` for the hardest scope | Opus `high`; Fable integrates | Required |
+| Substantial audit, research, repository analysis, or planning | Terra `high` workers; Sol orchestrates and synthesizes | `claude-opus-5` at `high`; Fable orchestrates and synthesizes | Required |
+| Small, well-tested implementation | Terra `medium`/`high`; Sol integrates | `claude-opus-5` at `medium`/`high`; Fable integrates | Required unless bounded, deterministic, and without behavioral/factual consequence |
+| Substantive implementation, tests, or debugging | Terra `medium` for normal scoped work, `high` when difficult; Sol `high` for the hardest scope | `claude-opus-5` at `high`; Fable integrates | Required |
 | Planning, routing, integration, or synthesis for a substantial task | Sol `high` | Fable `high` | Required |
-| Contracts, permissions, funds, auth, security, migrations, costly architecture | Sol `xhigh`; `max` for the hardest remaining question | Fable or Opus at the strongest verified effort | Required at the strongest suitable tier |
+| Contracts, permissions, funds, auth, security, migrations, costly architecture | Sol `xhigh`; `max` for the hardest remaining question | Fable or Opus 5 (`claude-opus-5`) at the strongest verified effort | Required at the strongest suitable tier |
 | Hard diagnosis after failed attempts or conflicting reviews | Sol `xhigh`; exceptionally `max` | Strongest verified Claude tier at high effort | Required independent second opinion |
 | Complex review of Codex-authored code, architecture, or conflicting findings | Sol owns integration | Fable `high`/`xhigh` as bounded independent reviewer | Required; Sol retains final ownership |
 | Large task that divides into independent workstreams | Sol `ultra`, only when supported and quality benefits from fan-out | Explicit bounded workflow | Required synthesis and opposite-provider final review |
@@ -281,7 +287,7 @@ From Codex, call Claude as the independent provider:
 fable-review \
   "Review the current change for cross-cutting code and architecture defects."
 
-# Preferred: preflight authentication, pin Opus/high, and keep the review
+# Preferred: preflight authentication, pin Opus 5/medium, and keep the review
 # read-only. Pass a focused prompt when the default current-diff review is not
 # enough.
 claude-review
@@ -318,19 +324,33 @@ The review helper exits before making a model call when `claude` is missing or
 `PATH`, captures status plus staged and unstaged diffs itself with read-only Git
 commands, and gives Claude only Read, Grep, and Glob tools. A model entitlement
 or API failure is returned unchanged by Claude Code, so do not misreport it as a
-completed review. Override the pinned route only after verifying availability:
+completed review.
+
+The helper uses `medium` effort for normal Opus 5 review. Its text output is
+buffered until Claude returns the final answer, so a live process with no stdout
+is not a hang. Keep polling the same process and never start a duplicate merely
+because no final text has appeared. Reserve `high` or `xhigh` for critical,
+security-sensitive, or genuinely complex review:
 
 ```sh
-CLAUDE_REVIEW_MODEL=claude-opus-5 \
-CLAUDE_REVIEW_EFFORT=xhigh \
+CLAUDE_REVIEW_EFFORT=high \
   claude-review "Review this security-sensitive change."
 ```
 
+If a bounded contextual review genuinely times out, terminate it cleanly and
+retry exactly once with `claude-opus-5` at `medium`, the exact diff in the
+prompt, and repository tools disabled. If that compact Opus 5 retry also fails,
+use `fable-review` as the current Claude fallback and report it. Do not retry
+indefinitely, run concurrent duplicate reviews, or substitute an older Opus
+model.
+
 `fable-review` uses the same read-only evidence wrapper but defaults to
-`claude-fable-5`. It is a specialist hand-off, not a transfer of orchestration
-ownership. The active Sol orchestrator must validate and integrate its findings.
-If Fable access is rejected, fall back once to `claude-review` and report that
-the Fable route was skipped.
+`claude-fable-5`. The wrapper accepts only the exact pinned Opus 5 and Fable 5
+model IDs, so an older Opus model cannot be selected through
+`CLAUDE_REVIEW_MODEL`. It is a specialist hand-off, not a transfer of
+orchestration ownership. The active Sol orchestrator must validate and integrate
+its findings. If Fable access is rejected, fall back once to `claude-review` and
+report that the Fable route was skipped.
 
 `sol-review` is the symmetric Fable-to-Sol hand-off. It captures the same Git
 evidence, pins `gpt-5.6-sol` at high effort, runs Codex with
@@ -357,8 +377,9 @@ renames, generated files, and tiny documentation edits with no behavioral or
 factual consequence. Scale alone can make an otherwise mechanical task
 substantial.
 
-If GPT/Codex implemented, use Opus at high effort for a normal independent
-review. Use Fable at `high` or `xhigh` when the review spans complex code,
+If GPT/Codex implemented, use Opus 5 (`claude-opus-5`) at `medium` effort for a
+normal independent review, raising it to `high` for critical or genuinely
+complex work. Use Fable at `high` or `xhigh` when the review spans complex code,
 architecture, multiple workstreams, or conflicting findings; this is valid even
 inside a Sol-led workflow, and Sol retains final integration ownership. If
 Claude implemented, use Sol `high`, raising it to `xhigh` for critical work.
@@ -447,22 +468,24 @@ is not a useful cross-check.
 
 1. The owning Sol/Fable orchestrator scopes the task and assigns
    non-overlapping work.
-2. Terra `medium`/`high` or Opus `high` implements normal scoped work; Sol or
-   Opus handles the hardest scope. The opposite provider receives at least one
-   meaningful task, at minimum the adversarial review.
+2. Terra `medium`/`high` or `claude-opus-5` at `high` implements normal scoped
+   work; Sol or Opus 5 handles the hardest scope. The opposite provider receives
+   at least one meaningful task, at minimum the adversarial review.
 3. The orchestrator inspects the integrated diff and runs project verification.
-4. If one provider authored the change, the opposite provider reviews it at high
-   effort. Use Fable for complex cross-cutting review of Sol/Codex-authored work
-   when its orchestration-grade judgement adds value. If both authored scopes,
-   each provider reviews the other's scope.
+4. If one provider authored the change, the opposite provider reviews it at
+   normal strong effort (`medium` for Opus 5), raising to `high` when the change
+   is critical or genuinely complex. Use Fable for complex cross-cutting review
+   of Sol/Codex-authored work when its orchestration-grade judgement adds value.
+   If both authored scopes, each provider reviews the other's scope.
 5. The orchestrator resolves findings and reruns affected verification.
 
 ### Critical or hard change
 
 1. The owning Sol or Fable tier plans at `xhigh` or the strongest equivalent
    effort with a bounded task graph.
-2. Sol/Opus implements the decisive scopes; Terra handles bounded supporting
-   workstreams, and Luna/Sonnet handles only mechanical support work.
+2. Sol/Opus 5 (`claude-opus-5`) implements the decisive scopes; Terra handles
+   bounded supporting workstreams, and Luna/Sonnet handles only mechanical
+   support work.
 3. Run focused and broader verification.
 4. Each provider reviews the other provider's authored scopes adversarially at
    `xhigh` or the strongest equivalent effort. In a Sol-led run, Fable can own

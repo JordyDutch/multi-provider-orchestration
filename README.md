@@ -14,7 +14,7 @@ hand-off from Codex.
 | `CLAUDE.md` | Thin Claude Code entry point that imports `AGENTS.md`. |
 | `ORCHESTRATION.md` | Full model-routing, effort, delegation, review, and verification playbook. |
 | `scripts/install-global.sh` | Idempotent global installer for both Codex and Claude. |
-| `scripts/claude-review.sh` | Read-only Opus or Fable review hand-off for Codex-led work. |
+| `scripts/claude-review.sh` | Read-only Opus 5 or Fable 5 review hand-off for Codex-led work. |
 | `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off for Fable-led work. |
 | `scripts/test.sh` | Isolated installer and model-dispatch regression tests. |
 
@@ -74,8 +74,11 @@ claude-review
 ```
 
 The helper checks the Claude CLI and authentication, captures staged and
-unstaged diffs with read-only Git commands, pins Opus at high effort by default,
-and gives Claude only `Read`, `Grep`, and `Glob`.
+unstaged diffs with read-only Git commands, pins Opus 5 (`claude-opus-5`) at
+medium effort for normal review, and gives Claude only `Read`, `Grep`, and
+`Glob`. It rejects bare, `latest`, and older Opus model IDs. Final text is
+buffered until the review completes, so silence while the process is alive is
+not a hang and must not trigger a duplicate review.
 
 For complex code, architecture, multi-workstream, or conflicting-findings review
 inside a Sol-led workflow, call Fable through the same read-only wrapper:
@@ -98,11 +101,11 @@ sol-review \
 Codex `read-only` sandbox. If a requested Fable route is unavailable, fall back
 once to `claude-review` and report that Fable review was skipped.
 
-Override the route only after verifying model availability:
+Raise effort only for critical or genuinely complex review without changing the
+pinned Opus 5 route:
 
 ```sh
-CLAUDE_REVIEW_MODEL=claude-opus-5 \
-CLAUDE_REVIEW_EFFORT=xhigh \
+CLAUDE_REVIEW_EFFORT=high \
   claude-review "Review this security-sensitive change."
 ```
 
