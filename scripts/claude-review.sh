@@ -4,29 +4,32 @@ set -eu
 
 case "$(basename "$0")" in
   fable-review)
-    default_model="claude-fable-5"
-    default_effort="high"
+    default_model="claude-fable-5-1"
     ;;
   *)
     default_model="claude-opus-5"
-    default_effort="medium"
     ;;
 esac
 
 model="${CLAUDE_REVIEW_MODEL:-$default_model}"
-effort="${CLAUDE_REVIEW_EFFORT:-$default_effort}"
 prompt="${*:-Review the current change adversarially for concrete bugs, regressions, and missing tests. Return findings ordered by severity with file and line evidence. Do not edit files.}"
 
 case "$model" in
-  claude-opus-5|claude-fable-5)
+  claude-opus-5)
+    default_effort="high"
+    ;;
+  claude-fable-5-1)
+    default_effort="xhigh"
     ;;
   *)
-    echo "Claude review unavailable: model must be pinned to claude-opus-5 or claude-fable-5." >&2
+    echo "Claude review unavailable: model must be pinned to claude-opus-5 or claude-fable-5-1." >&2
     exit 64
     ;;
 esac
 
-if [ "$model" = "claude-fable-5" ]; then
+effort="${CLAUDE_REVIEW_EFFORT:-$default_effort}"
+
+if [ "$model" = "claude-fable-5-1" ]; then
   role_preamble="You are a bounded independent reviewer in a Sol-led workflow. Sol retains final integration and synthesis ownership. Use the supplied diff as primary evidence, inspect only the smallest additional repository context needed, return a final verdict promptly, and do not widen the task or claim final ownership."
 else
   role_preamble="You are a bounded independent Claude reviewer. The calling orchestrator retains final integration and synthesis ownership. Use the supplied diff as primary evidence, inspect only the smallest additional repository context needed, return a final verdict promptly, and do not widen the task or claim final ownership."

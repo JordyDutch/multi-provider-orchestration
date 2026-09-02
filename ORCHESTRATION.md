@@ -120,18 +120,25 @@ exact model ID `claude-opus-5`. Never use a bare `opus` alias, a `latest` alias,
 or an older Opus model ID. If that exact model is unavailable, report the route
 as skipped instead of silently substituting an older Opus release.
 
+Every unqualified Fable reference in this playbook means Claude Fable 5.1 with
+the exact model ID `claude-fable-5-1`. Never use a bare `fable` alias, a `latest`
+alias, or the older `claude-fable-5`. If that exact model is unavailable, report
+the route as skipped instead of silently substituting an older Fable release.
+
 | Tier | Model | Best use | Avoid as default for |
 | ------ | ------- | ---------- | ---------------------- |
 | **Frontier** | GPT-5.6 Sol (`gpt-5.6-sol`) | Codex orchestrator; hardest implementation, diagnosis, architecture, security, integration, and final judgement. | Inventory, extraction, formatting, or other mechanical support work. |
 | **Everyday** | GPT-5.6 Terra (`gpt-5.6-terra`) | Repository mapping, read-heavy analysis, normal scoped implementation workstreams, tests, and supporting reviews. | Orchestration or final judgement on important work when Sol is available. |
 | **Efficient** | GPT-5.6 Luna (`gpt-5.6-luna`) | Clear, repeatable, low-risk work with explicit success criteria: extraction, classification, transformation, structured summaries, and mechanical edits. | Ambiguous architecture, security decisions, or final review of critical changes. |
-| **Claude orchestrator** | Fable 5 (`claude-fable-5`) | Claude orchestrator for planning, decomposition, integration, and final synthesis; bounded complex-code, architecture, or conflicting-findings review in a Sol-led workflow. | Mechanical execution or silently taking final ownership from Sol. |
+| **Claude orchestrator** | Fable 5.1 (`claude-fable-5-1`) | Claude orchestrator for planning, decomposition, integration, and final synthesis; bounded complex-code, architecture, or conflicting-findings review in a Sol-led workflow. | Mechanical execution or silently taking final ownership from Sol. |
 | **Claude coding/review** | Opus 5 (`claude-opus-5`) | Substantive implementation, frontend/UX work, and independent review of GPT-authored changes. | Mechanical bulk work. |
 | **Claude efficient** | Sonnet 5 (`claude-sonnet-5`) | Low-risk bulk reading, extraction, renames, and formatting. | Architecture or final judgement of important work. |
 
 Claude model names and availability are also volatile. `claude-opus-5` was
-live-verified on 2026-07-29 against Claude Code 2.1.220. Verify the other Claude
-rows in the installed Claude Code environment before pinning them.
+live-verified on 2026-07-29 against Claude Code 2.1.220.
+`claude-fable-5-1` was live-verified on 2026-09-02 against Claude Code 2.1.258.
+Verify the other Claude rows in the installed Claude Code environment before
+pinning them.
 
 ### Default routes by task
 
@@ -203,6 +210,27 @@ existing Claude-only instructions and backs up differing global Codex context
 and helper files before replacement. Verify the installed copies and fresh-shell
 helper resolution; do not merely return these commands to the user.
 
+## Daily setup refresh
+
+Before the first non-trivial code, configuration, or documentation task each
+local calendar day, every agent instance must run:
+
+```sh
+refresh-global-setup
+```
+
+The installed helper uses the canonical checkout at
+`$HOME/GITHUB/multi-provider-orchestration` by default (override only with
+`CODEX_SETUP_REPO`), requires its `origin` to be exactly
+`https://github.com/JordyDutch/multi-provider-orchestration`, fetches
+`origin/main`, and accepts only a clean fast-forward. It then runs
+`./scripts/test.sh` and `./scripts/install-global.sh`, writing its daily success
+stamp only after both pass. A dirty, divergent, missing, or failed checkout is a
+safe blocker: it makes no update and the agent must report it before coding.
+
+This keeps every instance current without overwriting in-progress setup work or
+silently accepting a different source repository.
+
 ## Configuration and commands
 
 A quality-first Codex default for general software work is Sol at high:
@@ -226,7 +254,7 @@ session active through integration and final synthesis:
 codex -m gpt-5.6-sol -c 'model_reasoning_effort="high"'
 
 # Claude-led workflow.
-claude --model claude-fable-5 --effort high
+claude --model claude-fable-5-1 --effort high
 ```
 
 When the host can only make headless calls, invoke the same orchestrator before
@@ -235,11 +263,11 @@ findings and verification evidence:
 
 ```sh
 # Claude-led planning and routing.
-claude -p --model claude-fable-5 --effort high \
+claude -p --model claude-fable-5-1 --effort high \
   "Plan this substantial task, assign bounded Codex and Claude scopes, and define verification."
 
 # Claude-led final integration and synthesis after the delegated work.
-claude -p --model claude-fable-5 --effort high \
+claude -p --model claude-fable-5-1 --effort high \
   "Re-open the current diff and verification evidence, reconcile the supplied worker and review findings, and make the final judgement."
 
 # Codex-led planning and routing.
@@ -249,6 +277,15 @@ codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
 # Codex-led final integration and synthesis after the delegated work.
 codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
   "Re-open the current diff and verification evidence, reconcile the supplied worker and review findings, and make the final judgement."
+
+# On a host that cannot keep the Sol session interactive, capture Fable's
+# review for the headless Sol integration call. Wrapper status lines go to
+# stderr, so command substitution captures only the review text.
+findings="$(fable-review \
+  "Review the current change for cross-cutting code and architecture defects.")"
+codex exec -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
+  "Re-open the current diff and verification evidence, reconcile this Fable
+review, rerun verification, and make the final judgement: $findings"
 ```
 
 From Claude Code, call Codex headlessly with an explicit route:
@@ -283,9 +320,11 @@ From Codex, call Claude as the independent provider:
 
 ```sh
 # Orchestration-grade review of complex Codex-authored code. Sol remains the
-# owning orchestrator and integrates Fable's findings.
-fable-review \
-  "Review the current change for cross-cutting code and architecture defects."
+# owning orchestrator and integrates Fable's findings. Wrapper status lines go
+# to stderr, so command substitution captures only the review text.
+findings="$(fable-review \
+  "Review the current change for cross-cutting code and architecture defects.")"
+# The active Sol session applies "$findings" itself, then reruns verification.
 
 # Preferred: preflight authentication, pin Opus 5/medium, and keep the review
 # read-only. Pass a focused prompt when the default current-diff review is not
@@ -296,7 +335,7 @@ claude-review \
 
 # Repo-local fallback when the global helper is not installed.
 ./scripts/claude-review.sh
-CLAUDE_REVIEW_MODEL=claude-fable-5 ./scripts/claude-review.sh \
+CLAUDE_REVIEW_MODEL=claude-fable-5-1 ./scripts/claude-review.sh \
   "Perform a bounded complex review; Sol retains final ownership."
 
 # Minimal direct fallback when neither helper is installed. Supply the relevant
@@ -318,6 +357,27 @@ Bare `codex exec` and `codex review` inherit the user's global defaults. Use an
 explicit model and effort when predictable routing matters; otherwise allow the
 orchestrator's verified default to avoid noisy command repetition.
 
+### Review selection with a confidence margin
+
+The owning orchestrator, not the helper name, selects the review route after it
+has inspected the changed surface, blast radius, and verification evidence.
+Classify the task first, then choose one reviewer-strength rung above the first
+route that would normally be sufficient. This is a deliberate small confidence
+margin, not a reason to turn trivial work into an expensive review or to use
+the maximum tier by default.
+
+| Actual change | If Codex/GPT authored it | If Claude authored it |
+| --- | --- | --- |
+| Bounded but substantive feature, bug fix, or refactor | `claude-review` -> Opus 5 at `high` | `sol-review` -> Sol at `xhigh` |
+| Complex, cross-cutting, architecture, or conflicting findings | `fable-review` -> Fable 5.1 at `xhigh` | `sol-review` -> Sol at `max` |
+| Critical: auth, permissions, funds, security, destructive data, or costly-to-reverse infrastructure | `fable-review` -> Fable 5.1 at `xhigh`; add `claude-review` -> Opus 5 at `high` when it provides a materially independent perspective | `sol-review` -> Sol at `max`; add an independent Claude review if it materially reduces risk |
+
+Only the deterministic, no-consequence exceptions may skip review. If the
+chosen model or effort is unavailable, use the strongest verified supported
+route, record the downgrade, and never silently substitute an older model. A
+reviewer may recommend further escalation from concrete evidence, but does not
+replace the owning orchestrator's final routing decision.
+
 The review helper exits before making a model call when `claude` is missing or
 `claude auth status` does not report `loggedIn: true`. It falls back to
 `$HOME/.local/bin/claude` when Codex's non-interactive shell has a narrower
@@ -326,15 +386,17 @@ commands, and gives Claude only Read, Grep, and Glob tools. A model entitlement
 or API failure is returned unchanged by Claude Code, so do not misreport it as a
 completed review.
 
-The helper uses `medium` effort for normal Opus 5 review. Its text output is
+`claude-review` defaults to Opus 5 at `high`; `fable-review` defaults to Fable
+5.1 at `xhigh`. Those defaults implement the confidence margin for their
+respective normal and complex Codex-authored review routes. Their text output is
 buffered until Claude returns the final answer, so a live process with no stdout
 is not a hang. Keep polling the same process and never start a duplicate merely
-because no final text has appeared. Reserve `high` or `xhigh` for critical,
-security-sensitive, or genuinely complex review:
+because no final text has appeared. Override an effort only when the owning
+orchestrator has a concrete reason to do so:
 
 ```sh
-CLAUDE_REVIEW_EFFORT=high \
-  claude-review "Review this security-sensitive change."
+CLAUDE_REVIEW_EFFORT=xhigh \
+  claude-review "Review this unusually subtle security-sensitive change."
 ```
 
 If a bounded contextual review genuinely times out, terminate it cleanly and
@@ -345,15 +407,15 @@ indefinitely, run concurrent duplicate reviews, or substitute an older Opus
 model.
 
 `fable-review` uses the same read-only evidence wrapper but defaults to
-`claude-fable-5`. The wrapper accepts only the exact pinned Opus 5 and Fable 5
-model IDs, so an older Opus model cannot be selected through
-`CLAUDE_REVIEW_MODEL`. It is a specialist hand-off, not a transfer of
-orchestration ownership. The active Sol orchestrator must validate and integrate
-its findings. If Fable access is rejected, fall back once to `claude-review` and
-report that the Fable route was skipped.
+`claude-fable-5-1` at `xhigh`. The wrapper accepts only the exact pinned Opus 5
+and Fable 5.1 model IDs, so an older Opus or Fable model cannot be selected
+through `CLAUDE_REVIEW_MODEL`. It is a specialist hand-off, not a transfer of
+orchestration ownership. The active Sol orchestrator must validate and
+integrate its findings. If Fable access is rejected, fall back once to
+`claude-review` and report that the Fable route was skipped.
 
 `sol-review` is the symmetric Fable-to-Sol hand-off. It captures the same Git
-evidence, pins `gpt-5.6-sol` at high effort, runs Codex with
+evidence, pins `gpt-5.6-sol` at `xhigh` effort by default, runs Codex with
 `--sandbox read-only`, and encodes that Fable retains final ownership.
 
 ## When to use the opposite provider
@@ -377,12 +439,10 @@ renames, generated files, and tiny documentation edits with no behavioral or
 factual consequence. Scale alone can make an otherwise mechanical task
 substantial.
 
-If GPT/Codex implemented, use Opus 5 (`claude-opus-5`) at `medium` effort for a
-normal independent review, raising it to `high` for critical or genuinely
-complex work. Use Fable at `high` or `xhigh` when the review spans complex code,
-architecture, multiple workstreams, or conflicting findings; this is valid even
-inside a Sol-led workflow, and Sol retains final integration ownership. If
-Claude implemented, use Sol `high`, raising it to `xhigh` for critical work.
+Apply the confidence-margin selector above rather than treating a helper's
+default as the universal route. In short: Codex-authored normal work gets Opus
+5 at `high`; complex work gets Fable 5.1 at `xhigh`; Claude-authored normal
+work gets Sol at `xhigh`; and critical Claude-authored work gets Sol at `max`.
 Terra, Luna, and Sonnet do not count as the final independent reviewer when a
 stronger available model could materially improve the result.
 
@@ -406,19 +466,25 @@ is not a useful cross-check.
 4. **Send compact hand-offs.** Include the goal, constraints, relevant paths or
    diff, exact failure, and required return format. Remove secrets and unrelated
    logs first.
-5. **Reuse one good scout result.** Do not ask multiple agents to rediscover the
+5. **Use the standing review authorization narrowly.** The user has authorized
+   sending the smallest necessary current Git evidence and read-only repository
+   context to the configured Claude or Codex provider for independent reviews.
+   It is continuing permission for these normal review hand-offs, not permission
+   to send credentials, private keys, personal data, unrelated files, or broader
+   external payloads.
+6. **Reuse one good scout result.** Do not ask multiple agents to rediscover the
    same repository map.
-6. **Use duplicate implementation selectively.** It is useful when competing
+7. **Use duplicate implementation selectively.** It is useful when competing
    designs or a hard diagnosis could materially improve the outcome;
    otherwise prefer one implementation plus one adversarial review.
-7. **Cap fan-out.** Name the maximum workers and their non-overlapping scopes.
+8. **Cap fan-out.** Name the maximum workers and their non-overlapping scopes.
    More agents are not automatically more coverage.
-8. **Never nest automatic delegation.** An `ultra` run must not launch another
+9. **Never nest automatic delegation.** An `ultra` run must not launch another
    `ultra` run, and a delegated worker must not silently widen its own scope.
-9. **Choose speed separately from quality.** A faster service tier reduces
+10. **Choose speed separately from quality.** A faster service tier reduces
    latency but does not replace stronger reasoning or review; opt in when the
    quicker turnaround is worth its usage cost.
-10. **Stop when the evidence is decisive.** Passing focused tests, a clean diff,
+11. **Stop when the evidence is decisive.** Passing focused tests, a clean diff,
     and a strong opposite-provider review are a completion signal, not a reason
     to sample every model tier.
 
