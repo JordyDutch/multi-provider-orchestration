@@ -29,10 +29,13 @@ grep -qF "**Choose reviews dynamically, with a confidence margin.**" \
   "$repo_dir/AGENTS.md"
 grep -qF "**Standing external-review authorization.**" \
   "$repo_dir/AGENTS.md"
+grep -qF "**Use the host context for Claude authentication and reviews.**" \
+  "$repo_dir/AGENTS.md"
 grep -qF "no stdout while its process is alive is not evidence" \
   "$repo_dir/AGENTS.md"
 grep -qF "Every unqualified Opus reference" "$repo_dir/ORCHESTRATION.md"
 grep -qF "Every unqualified Fable reference" "$repo_dir/ORCHESTRATION.md"
+grep -qF "## Claude host-session boundary" "$repo_dir/ORCHESTRATION.md"
 grep -qF "## Parallel work safety" "$repo_dir/ORCHESTRATION.md"
 grep -qF "launch them together instead of waiting" \
   "$repo_dir/ORCHESTRATION.md"

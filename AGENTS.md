@@ -46,6 +46,14 @@ version is:
   before pinning a model. Use the compact filtered catalog command in
   `ORCHESTRATION.md`; never load the raw `codex debug models` output into model
   context. Access can vary by account and Codex version.
+- **Use the host context for Claude authentication and reviews.** When Codex
+  invokes `claude`, `claude-review`, or `fable-review`, run it outside the Codex
+  filesystem/process sandbox. That sandbox can have a separate credential store
+  and falsely report `loggedIn: false` even when the host Claude session is
+  active. Treat a host-context `claude auth status` as authoritative; rerun a
+  sandbox-only false negative in the host context instead of asking the user to
+  sign in again. Keep the normal minimal-evidence and authorization boundaries
+  for any external review hand-off.
 - **Promote substantial work to a strong orchestrator.** In a Codex-led session,
   use GPT-5.6 Sol for planning, routing, integration, and final synthesis. In a
   Claude-led session, use Fable 5.1 (`claude-fable-5-1`). If the active session

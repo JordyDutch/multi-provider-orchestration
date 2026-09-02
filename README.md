@@ -95,6 +95,12 @@ high effort for normal substantive review, and gives Claude only `Read`, `Grep`,
 is buffered until the review completes, so silence while the process is alive
 is not a hang and must not trigger a duplicate review.
 
+When invoking Claude from Codex, run `claude auth status`, `claude-review`, and
+`fable-review` outside the Codex filesystem/process sandbox. The sandbox can
+see a separate credential store and falsely report that Claude is logged out.
+Use the host-context result as authoritative; do not make the user sign in again
+until that host check fails too.
+
 For complex code, architecture, multi-workstream, or conflicting-findings review
 inside a Sol-led workflow, call Fable 5.1 (`claude-fable-5-1`) through the same
 read-only wrapper:
