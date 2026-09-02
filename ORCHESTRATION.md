@@ -84,6 +84,17 @@ Treat a route as available only when the CLI is installed, authenticated, and
 the requested model appears for that account. Do not repeatedly probe paid
 models after an access failure. Fall back once and report the skipped route.
 
+### Claude host-session boundary
+
+Run `claude auth status`, `claude-review`, and `fable-review` outside the Codex
+filesystem/process sandbox. The sandbox can be unable to access Claude Code's
+host credential store and therefore return `loggedIn: false` while the same
+Claude binary is authenticated in the host terminal. A sandbox-only false
+negative is not an authentication failure: rerun the exact check in host
+context, treat that result as authoritative, and do not ask the user to log in
+again unless the host check also fails. This execution boundary does not relax
+the requirement to send only authorized, minimal read-only review evidence.
+
 For a substantial task, check the orchestrator before planning:
 
 - **Started in Codex:** switch the session to Sol for the full workflow. If the
@@ -378,7 +389,11 @@ route, record the downgrade, and never silently substitute an older model. A
 reviewer may recommend further escalation from concrete evidence, but does not
 replace the owning orchestrator's final routing decision.
 
-The review helper exits before making a model call when `claude` is missing or
+Run the review helper outside the Codex sandbox so its authentication preflight
+can see the host Claude session. In a sandbox it can correctly exit before a
+model call because that isolated environment reports `loggedIn: false`; that is
+a context limitation, not evidence that the host user is logged out. In host
+context, the helper exits before making a model call when `claude` is missing or
 `claude auth status` does not report `loggedIn: true`. It falls back to
 `$HOME/.local/bin/claude` when Codex's non-interactive shell has a narrower
 `PATH`, captures status plus staged and unstaged diffs itself with read-only Git
