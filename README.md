@@ -14,7 +14,8 @@ hand-off from Codex.
 | `CLAUDE.md` | Thin Claude Code entry point that imports `AGENTS.md`. |
 | `ORCHESTRATION.md` | Full model-routing, effort, delegation, review, and verification playbook. |
 | `scripts/install-global.sh` | Idempotent global installer for both Codex and Claude. |
-| `scripts/claude-review.sh` | Read-only Opus 5 or Fable 5 review hand-off for Codex-led work. |
+| `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and global-install refresh. |
+| `scripts/claude-review.sh` | Read-only Opus 5 or Fable 5.1 review hand-off for Codex-led work. |
 | `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off for Fable-led work. |
 | `scripts/test.sh` | Isolated installer and model-dispatch regression tests. |
 
@@ -33,6 +34,7 @@ The installer:
 - copies `AGENTS.md` and `ORCHESTRATION.md` into `~/.codex`;
 - installs `claude-review`, `fable-review`, and `sol-review` into
   `~/.local/bin`;
+- installs `refresh-global-setup` into `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content;
 - adds `@~/.codex/AGENTS.md` to Claude's rules exactly once;
 - backs up differing global Codex context files before replacing them;
@@ -49,6 +51,19 @@ existing Claude-only instructions, and verify the resulting local files instead
 of merely describing the setup.
 
 If `~/.local/bin` is not on `PATH`, add it to your shell configuration.
+
+## Daily setup refresh
+
+Before its first non-trivial coding, configuration, or documentation task each
+day, an agent runs:
+
+```sh
+refresh-global-setup
+```
+
+It fetches only `origin/main` from the canonical setup repository, accepts only
+a clean fast-forward, runs the suite, then reinstalls the global files. A dirty,
+divergent, or failing setup checkout stops safely without overwriting anything.
 
 ## Use in one repository
 
@@ -75,13 +90,14 @@ claude-review
 
 The helper checks the Claude CLI and authentication, captures staged and
 unstaged diffs with read-only Git commands, pins Opus 5 (`claude-opus-5`) at
-medium effort for normal review, and gives Claude only `Read`, `Grep`, and
-`Glob`. It rejects bare, `latest`, and older Opus model IDs. Final text is
-buffered until the review completes, so silence while the process is alive is
-not a hang and must not trigger a duplicate review.
+high effort for normal substantive review, and gives Claude only `Read`, `Grep`, and
+`Glob`. It rejects bare, `latest`, and older Opus or Fable model IDs. Final text
+is buffered until the review completes, so silence while the process is alive
+is not a hang and must not trigger a duplicate review.
 
 For complex code, architecture, multi-workstream, or conflicting-findings review
-inside a Sol-led workflow, call Fable through the same read-only wrapper:
+inside a Sol-led workflow, call Fable 5.1 (`claude-fable-5-1`) through the same
+read-only wrapper:
 
 ```sh
 fable-review \
@@ -97,15 +113,19 @@ sol-review \
   "Review the current change for cross-cutting code and architecture defects."
 ```
 
-`sol-review` captures the diff, pins GPT-5.6 Sol at high effort, and enforces the
+`sol-review` captures the diff, pins GPT-5.6 Sol at xhigh effort, and enforces the
 Codex `read-only` sandbox. If a requested Fable route is unavailable, fall back
 once to `claude-review` and report that Fable review was skipped.
 
-Raise effort only for critical or genuinely complex review without changing the
-pinned Opus 5 route:
+The owning model chooses the review route after classifying the actual task,
+then uses one review-strength rung more than the first sufficient route: Opus 5
+at high for normal Codex-authored work, Fable 5.1 at xhigh for complex
+Codex-authored work, Sol at xhigh for normal Claude-authored work, and Sol at
+max for critical Claude-authored work. Deterministic no-consequence work stays
+exempt. Override an effort only for a concrete reason:
 
 ```sh
-CLAUDE_REVIEW_EFFORT=high \
+CLAUDE_REVIEW_EFFORT=xhigh \
   claude-review "Review this security-sensitive change."
 ```
 

@@ -3,7 +3,7 @@
 set -eu
 
 model="${SOL_REVIEW_MODEL:-gpt-5.6-sol}"
-effort="${SOL_REVIEW_EFFORT:-high}"
+effort="${SOL_REVIEW_EFFORT:-xhigh}"
 prompt="${*:-Review the current change adversarially for concrete bugs, regressions, and missing tests. Return findings ordered by severity with file and line evidence. Do not edit files.}"
 role_preamble="You are a bounded independent reviewer in a Fable-led workflow. Fable retains final integration and synthesis ownership. Do not edit files, widen the task, or claim final ownership."
 

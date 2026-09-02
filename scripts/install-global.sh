@@ -43,6 +43,9 @@ backup_if_different \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
 backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
+backup_if_different \
+  "$repo_dir/scripts/refresh-global-setup.sh" \
+  "$local_bin_dir/refresh-global-setup"
 
 install -m 644 "$repo_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 install -m 644 "$repo_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
@@ -52,6 +55,8 @@ install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/fable-review"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
   "$local_bin_dir/sol-review"
+install -m 755 "$repo_dir/scripts/refresh-global-setup.sh" \
+  "$local_bin_dir/refresh-global-setup"
 
 touch "$claude_rules"
 if ! grep -qxF "$shared_import" "$claude_rules"; then
@@ -65,6 +70,9 @@ verify_copy \
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
+verify_copy \
+  "$repo_dir/scripts/refresh-global-setup.sh" \
+  "$local_bin_dir/refresh-global-setup"
 test "$(grep -c -xF "$shared_import" "$claude_rules")" -eq 1
 
 printf '%s\n' \
@@ -74,6 +82,7 @@ printf '%s\n' \
   "  $local_bin_dir/claude-review" \
   "  $local_bin_dir/fable-review" \
   "  $local_bin_dir/sol-review" \
+  "  $local_bin_dir/refresh-global-setup" \
   "Claude import preserved in $claude_rules"
 
 fresh_helper=''
@@ -112,5 +121,18 @@ if [ "$fresh_sol" = "$local_bin_dir/sol-review" ]; then
 else
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/sol-review." \
+    "Add $local_bin_dir to PATH in your shell configuration." >&2
+fi
+
+fresh_refresh=''
+if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
+  fresh_refresh="$("$SHELL" -lic 'command -v refresh-global-setup' 2>/dev/null || true)"
+fi
+
+if [ "$fresh_refresh" = "$local_bin_dir/refresh-global-setup" ]; then
+  printf 'Fresh shell resolves refresh-global-setup at %s\n' "$fresh_refresh"
+else
+  printf '%s\n' \
+    "Warning: a fresh shell does not resolve $local_bin_dir/refresh-global-setup." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi

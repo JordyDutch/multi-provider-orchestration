@@ -48,14 +48,14 @@ version is:
   context. Access can vary by account and Codex version.
 - **Promote substantial work to a strong orchestrator.** In a Codex-led session,
   use GPT-5.6 Sol for planning, routing, integration, and final synthesis. In a
-  Claude-led session, use Fable 5. If the active session is on another tier,
-  switch models or invoke the orchestrator before delegation and again after
-  worker/reviewer results for final synthesis. If that is unsupported, use the
-  strongest available model and report the limitation.
+  Claude-led session, use Fable 5.1 (`claude-fable-5-1`). If the active session
+  is on another tier, switch models or invoke the orchestrator before delegation
+  and again after worker/reviewer results for final synthesis. If that is
+  unsupported, use the strongest available model and report the limitation.
 - **Use both providers from either entrypoint.** Starting in Codex means Sol
-  orchestrates and gives Claude via Fable 5 or Opus 5 (`claude-opus-5`) at least
-  one meaningful implementation, diagnosis, UX, or review task. Starting in
-  Claude means Fable orchestrates and gives Codex/Terra/Sol at least one
+  orchestrates and gives Claude via Fable 5.1 or Opus 5 (`claude-opus-5`) at
+  least one meaningful implementation, diagnosis, UX, or review task. Starting
+  in Claude means Fable orchestrates and gives Codex/Terra/Sol at least one
   meaningful task. The
   non-owning orchestrator remains available as a specialist: Sol may ask Fable
   for a complex independent code or architecture review, and Fable may ask Sol
@@ -72,14 +72,19 @@ version is:
   `latest` alias, or an older Opus model ID. If `claude-opus-5` is unavailable,
   report that the Opus route was skipped instead of silently substituting an
   older Opus release.
+- **Always pin Claude Fable to Fable 5.1.** Every Fable route means Claude Fable
+  5.1 with the exact model ID `claude-fable-5-1`. Never use a bare `fable` alias,
+  a `latest` alias, or the older `claude-fable-5`. If `claude-fable-5-1` is
+  unavailable, report that the Fable route was skipped instead of silently
+  substituting an older Fable release.
 - **Treat silent Opus review output correctly.** `claude-review` buffers its
   final text, so no stdout while its process is alive is not evidence of a
   hang. Use `medium` effort for a normal review, keep polling the existing
   process, and do not launch a duplicate. Reserve `high` or `xhigh` for
   critical, security-sensitive, or genuinely complex review. After a real
   bounded timeout, retry Opus 5 once with only the exact diff and no repository
-  tools; if that also fails, use Fable 5 and report the fallback. Never replace
-  Opus 5 with an older Opus release.
+  tools; if that also fails, use Fable 5.1 and report the fallback. Never
+  replace Opus 5 with an older Opus release.
 - **Match effort to consequence.** Luna `low`/`medium` handles inventory,
   extraction, and mechanical edits. Terra `medium`/`high` handles repository
   mapping and well-bounded worker tasks. Use Sol `high` for substantial
@@ -98,6 +103,17 @@ version is:
   and costly-to-reverse architecture. Skip the second provider only for
   bounded, deterministic work with no behavioral or factual consequence, or
   when it is unavailable.
+- **Choose reviews dynamically, with a confidence margin.** The owning
+  orchestrator classifies the actual change and chooses the reviewer; a helper
+  name is not the decision. For every review that is warranted, choose one
+  review-strength rung above the minimum that first appears sufficient:
+  normal Codex-authored work -> Opus 5 at `high`; complex or cross-cutting
+  Codex-authored work -> Fable 5.1 at `xhigh`; normal Claude-authored work ->
+  Sol at `xhigh`; critical Claude-authored work -> Sol at `max`. For critical
+  Codex-authored work, use Fable 5.1 at `xhigh` and add an Opus 5 review at
+  `high` when a second independent Claude perspective materially reduces risk.
+  Do not manufacture a review for an exempt deterministic task, and do not
+  escalate beyond the highest supported safe rung merely to satisfy the rule.
 - **Delegate by fit without locking tiers to ownership.** Exactly one
   orchestrator owns the plan, integration, and final decision, but the other
   provider's orchestrator may serve as a bounded expert or reviewer. Use Terra
@@ -125,6 +141,22 @@ version is:
   captures the current diff, and keeps the review read-only. Use
   `fable-review` when the independent review needs Fable's cross-cutting
   orchestration judgement.
+- **Standing external-review authorization.** The user authorizes sending the
+  smallest necessary current Git diff, status, and read-only repository context
+  to the configured Claude or Codex review provider for an independent review.
+  This authorization continues across tasks in this setup; no extra confirmation
+  is needed for that normal review hand-off. Never include credentials, tokens,
+  private keys, personal data, or unrelated files, and ask again before any
+  external action that exceeds this narrow read-only review scope.
+- **Refresh this shared setup daily before coding.** Before the first
+  non-trivial code, configuration, or documentation change in each local
+  calendar day, run `refresh-global-setup`. It checks the canonical
+  `https://github.com/JordyDutch/multi-provider-orchestration` checkout, accepts
+  only a clean fast-forward to `origin/main`, runs its tests, and reinstalls the
+  verified global setup. If the canonical checkout is dirty, divergent, missing,
+  or a check fails, do not overwrite it or begin the requested code change:
+  report the blocked refresh and ask for direction. A successful daily refresh
+  is recorded, so later coding tasks that day do not repeat it.
 - **Optimize routing without weakening the result.** Keep planning,
   implementation, hard diagnosis, and final review on the tier they need. Avoid
   repeated scouting, oversized context transfers, overlapping agents, and
