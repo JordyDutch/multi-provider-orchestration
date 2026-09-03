@@ -1,27 +1,29 @@
 # Multi-provider orchestration
 
 A portable, provider-neutral setup for combining OpenAI Codex and Claude Code
-in software projects. It defines strong orchestrator and worker routes,
-opposite-provider review, proactive bounded parallelism for independent
-workstreams, verification requirements, and a reliable read-only Claude review
-hand-off from Codex.
+with risk-based model routing, focused opposite-provider review, bounded
+parallelism, and verified global installation.
 
-## Included
+The layout avoids loading the full baseline twice while remaining self-contained
+for people who clone the repository before installing it.
 
-| File | Purpose |
+## Layout
+
+| Path | Purpose |
 | --- | --- |
-| `AGENTS.md` | Shared global and per-repo rules read natively by Codex and imported by Claude. |
-| `CLAUDE.md` | Thin Claude Code entry point that imports `AGENTS.md`. |
-| `ORCHESTRATION.md` | Full model-routing, effort, delegation, review, and verification playbook. |
-| `scripts/install-global.sh` | Idempotent global installer for both Codex and Claude. |
-| `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and global-install refresh. |
-| `scripts/claude-review.sh` | Read-only Opus 5 or Fable 5.1 review hand-off for Codex-led work. |
-| `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off for Fable-led work. |
-| `scripts/test.sh` | Isolated installer and model-dispatch regression tests. |
+| `AGENTS.md` | Small clone bootstrap; tells an uninstalled agent where to find the portable baseline. |
+| `CLAUDE.md` | Thin Claude entry point that imports the bootstrap. |
+| `ORCHESTRATION.md` | Compatibility pointer for older links and copies. |
+| `shared/AGENTS.md` | Canonical portable baseline installed globally. |
+| `shared/ORCHESTRATION.md` | Short task router that selects only relevant playbooks. |
+| `shared/playbooks/` | On-demand routing, review, execution, and setup guidance. |
+| `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review helpers. |
+| `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
+| `scripts/claude-review.sh` | Focused read-only Opus 5 or Fable 5.1 review hand-off. |
+| `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off. |
+| `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
 ## Install globally
-
-Clone the repository and run the installer:
 
 ```sh
 git clone https://github.com/JordyDutch/multi-provider-orchestration.git
@@ -31,46 +33,47 @@ cd multi-provider-orchestration
 
 The installer:
 
-- copies `AGENTS.md` and `ORCHESTRATION.md` into `~/.codex`;
-- installs `claude-review`, `fable-review`, and `sol-review` into
-  `~/.local/bin`;
-- installs `refresh-global-setup` into `~/.local/bin`;
-- preserves existing `~/.claude/CLAUDE.md` content;
-- adds `@~/.codex/AGENTS.md` to Claude's rules exactly once;
-- backs up differing global Codex context files before replacing them;
-- verifies every installed copy byte-for-byte.
+- copies `shared/AGENTS.md` to `~/.codex/AGENTS.md`;
+- copies the shared router and playbooks to `~/.codex`;
+- installs `claude-review`, `fable-review`, `sol-review`, and
+  `refresh-global-setup` under `~/.local/bin`;
+- preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
+  `@~/.codex/AGENTS.md` import;
+- backs up differing installed files and verifies every copy byte-for-byte.
 
-This makes the same orchestration rules available to Codex and Claude in every
-user repository. Installing this baseline replaces the existing global
-`~/.codex/AGENTS.md`; project-level `AGENTS.md` files can still add or override
-repo-specific rules.
+After installation, Codex loads the compact global baseline and then only the
+repository-specific root instructions. Claude loads the same global baseline
+through its import. The root bootstrap detects the marker already present in the
+instruction chain and does not ask either engine to read `shared/AGENTS.md`
+again.
 
-You can also ask either model to install the checked-out setup globally. The
-rules explicitly require the model to run `./scripts/install-global.sh`, preserve
-existing Claude-only instructions, and verify the resulting local files instead
-of merely describing the setup.
+If the repository has just been cloned and is not installed yet, root
+`AGENTS.md` and `CLAUDE.md` direct both engines to the local shared baseline.
+That keeps the GitHub repository usable without a prior machine-level setup.
 
-If `~/.local/bin` is not on `PATH`, add it to your shell configuration.
+If `~/.local/bin` is not on `PATH`, add it to the shell configuration.
 
-## Daily setup refresh
+## Daily refresh
 
-Before its first non-trivial coding, configuration, or documentation task each
-day, an agent runs:
+Before the first non-trivial coding, configuration, or documentation change each
+day, the installed agent runs:
 
 ```sh
 refresh-global-setup
 ```
 
-It fetches only `origin/main` from the canonical setup repository, accepts only
-a clean fast-forward, runs the suite, then reinstalls the global files. A dirty,
-divergent, or failing setup checkout stops safely without overwriting anything.
+The helper accepts only the canonical GitHub origin, a clean fast-forward to
+`origin/main`, passing tests, and a verified reinstall. Dirty, divergent,
+missing, or failing checkouts stop safely without overwriting user work.
 
-## Use in one repository
+## Vendor into one repository
 
-Copy the shared files into a repository:
+Copy the bootstrap plus the entire shared directory so the destination remains
+self-contained:
 
 ```sh
 cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
+cp -R shared /path/to/repo/shared
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 chmod +x /path/to/repo/scripts/claude-review.sh \
@@ -78,68 +81,70 @@ chmod +x /path/to/repo/scripts/claude-review.sh \
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
-`## This repo` in the copied `AGENTS.md`.
+`## This repo` in the copied root `AGENTS.md`.
 
-## Claude review from Codex
+Older repositories that contain a complete historical baseline in their root
+`AGENTS.md` continue to work, but will still load that copy after the global
+baseline. Migrate them to the small bootstrap layout when convenient; the global
+installer never rewrites arbitrary repositories.
 
-After the global install, run this from any Git worktree:
+## Focused reviews
 
-```sh
-claude-review
-```
-
-The helper checks the Claude CLI and authentication, captures staged and
-unstaged diffs with read-only Git commands, pins Opus 5 (`claude-opus-5`) at
-high effort for normal substantive review, and gives Claude only `Read`, `Grep`, and
-`Glob`. It rejects bare, `latest`, and older Opus or Fable model IDs. Final text
-is buffered until the review completes, so silence while the process is alive
-is not a hang and must not trigger a duplicate review.
-
-When invoking Claude from Codex, run `claude auth status`, `claude-review`, and
-`fable-review` outside the Codex filesystem/process sandbox. The sandbox can
-see a separate credential store and falsely report that Claude is logged out.
-Use the host-context result as authoritative; do not make the user sign in again
-until that host check fails too.
-
-For complex code, architecture, multi-workstream, or conflicting-findings review
-inside a Sol-led workflow, call Fable 5.1 (`claude-fable-5-1`) through the same
-read-only wrapper:
+A normal review fails closed only when its selected scope has no tracked or
+untracked changes:
 
 ```sh
-fable-review \
-  "Review the current change for cross-cutting code and architecture defects."
+claude-review "Review the changed behavior and missing tests."
+fable-review "Review this cross-cutting change."
+sol-review "Review the changed behavior and missing tests."
 ```
 
-Sol remains the owning orchestrator and validates and integrates Fable's
-findings. Likewise, a Fable-led workflow can use Sol as a bounded complex
-reviewer without transferring final ownership.
+For an intentional clean-tree audit, opt in explicitly:
 
 ```sh
-sol-review \
-  "Review the current change for cross-cutting code and architecture defects."
+CLAUDE_REVIEW_MODE=audit claude-review "Audit only the named files."
+SOL_REVIEW_MODE=audit sol-review "Audit only the named files."
 ```
 
-`sol-review` captures the diff, pins GPT-5.6 Sol at xhigh effort, and enforces the
-Codex `read-only` sandbox. If a requested Fable route is unavailable, fall back
-once to `claude-review` and report that Fable review was skipped.
-
-The owning model chooses the review route after classifying the actual task,
-then uses one review-strength rung more than the first sufficient route: Opus 5
-at high for normal Codex-authored work, Fable 5.1 at xhigh for complex
-Codex-authored work, Sol at xhigh for normal Claude-authored work, and Sol at
-max for critical Claude-authored work. Deterministic no-consequence work stays
-exempt. Override an effort only for a concrete reason:
+Limit evidence to one relative file or directory when unrelated work exists:
 
 ```sh
-CLAUDE_REVIEW_EFFORT=xhigh \
-  claude-review "Review this security-sensitive change."
+CLAUDE_REVIEW_DIFF_PATH=src/auth claude-review "Review this path only."
+SOL_REVIEW_DIFF_PATH=src/auth sol-review "Review this path only."
 ```
+
+The Claude wrapper sends one combined `git diff HEAD` (or both the staged diff
+and current working-copy delta before the first commit) and lists untracked paths
+for read-only inspection. On current Claude CLIs it exposes only `Read`, `Grep`,
+and `Glob`, disables unrelated MCP and slash-command context, and asks Claude to
+move per-machine system sections outside the stable prompt-cache prefix. Older
+CLIs retain explicit allow/deny lists and print notices for unavailable context
+optimizations. Both wrappers reject absolute paths and parent traversal, and
+fail before a model call when diff-plus-status evidence exceeds 200,000 bytes.
+Prefer a path scope; raise
+`CLAUDE_REVIEW_MAX_DIFF_BYTES` or `SOL_REVIEW_MAX_DIFF_BYTES` only explicitly.
+Use `CLAUDE_REVIEW_EFFORT=xhigh` or `SOL_REVIEW_EFFORT=max` when the critical
+routing table requires stronger review.
+
+Run Claude helpers outside the Codex filesystem/process sandbox. They preflight
+authentication themselves, so a separate `claude auth status` immediately before
+the review is unnecessary. A sandbox-only `loggedIn: false` must be rechecked in
+host context before asking the user to sign in. Claude's final text is buffered;
+silence while its process lives is not a hang and must not trigger a duplicate.
+
+Review strength is based on consequence and uncertainty, not an automatic
+one-tier surcharge. Normal Codex-authored behavioral work uses Opus 5 at high;
+complex Codex-authored work uses Fable 5.1 at xhigh; normal Claude-authored work
+uses Sol at xhigh; critical work escalates according to
+`shared/playbooks/reviews.md`. Deterministic work with decisive verification and
+primary-source-backed factual lookups may remain single-provider.
 
 ## Verify changes
 
 ```sh
 ./scripts/test.sh
+git diff --check
 ```
 
-Model names, access, and effort levels can change. Recheck the live CLI
-catalogs before updating pinned routes.
+Model names, access, and effort levels are volatile. Recheck the official sources
+and compact live CLI catalogs before changing pinned routes.
