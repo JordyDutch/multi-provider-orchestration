@@ -7,8 +7,8 @@ read every playbook by default.
 
 | Task shape | Read | Default shape |
 | --- | --- | --- |
-| Bounded deterministic work with decisive checks | No extra playbook | One capable agent, focused verification, no automatic review |
-| Normal behavioral code, diagnosis, research, or planning | [`playbooks/routing.md`](playbooks/routing.md) and [`playbooks/execution.md`](playbooks/execution.md) | One owner, bounded work, verification; review only when the risk triggers apply |
+| Bounded deterministic work with decisive checks | No extra playbook | Active owner or provider-appropriate efficient tier; focused verification; no automatic review |
+| Normal behavioral code, diagnosis, research, or planning | [`playbooks/routing.md`](playbooks/routing.md) and [`playbooks/execution.md`](playbooks/execution.md) | One provider-appropriate owner, bounded work, and risk-appropriate review |
 | Opposite-provider review or audit | [`playbooks/reviews.md`](playbooks/reviews.md) | Smallest relevant evidence, one independent reviewer, owner integrates |
 | Security, auth, permissions, funds, destructive work, data-loss risk, migrations, or costly architecture | Routing, execution, and reviews | Strongest suitable owner and mandatory opposite-provider review |
 | Global installation, refresh, portability, or model availability | [`playbooks/setup.md`](playbooks/setup.md) | Fail-closed checks and byte-for-byte verification |
@@ -18,6 +18,8 @@ read every playbook by default.
 
 - Codex-led difficult work is owned by GPT-5.6 Sol. Claude-led difficult work is
   owned by Fable 5.1.
+- `playbooks/routing.md` is the canonical model and effort ladder; the active
+  baseline summarizes the no-playbook deterministic route.
 - Every Opus route uses exact `claude-opus-5`; every Fable route uses exact
   `claude-fable-5-1`. Never silently substitute an older model.
 - Consequential or uncertain work gets an independent opposite-provider review.
