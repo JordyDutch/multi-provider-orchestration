@@ -37,13 +37,14 @@ integration.
 ### Deterministic
 
 1. Inspect the exact scope.
-2. Make the narrow change with an efficient capable tier.
+2. Make the narrow change with the provider-appropriate tier selected by the
+   active baseline or `routing.md`.
 3. Run the focused deterministic check.
 4. Skip delegation and review while consequence and ambiguity remain negligible.
 
 ### Normal behavioral work
 
-1. One owner scopes the behavior and verification.
+1. One owner scopes the behavior and verification using `routing.md`.
 2. The owner or one bounded worker implements; avoid duplicate implementations.
 3. Run focused tests and inspect the integrated diff.
 4. Use one opposite-provider review when the risk triggers in `reviews.md` apply.

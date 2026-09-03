@@ -41,6 +41,25 @@ grep -qF 'read `shared/AGENTS.md`' "$repo_dir/AGENTS.md"
 grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/shared/AGENTS.md"
 grep -qF 'exact `claude-opus-5`' "$repo_dir/shared/AGENTS.md"
 grep -qF '`claude-fable-5-1`' "$repo_dir/shared/AGENTS.md"
+grep -qF "In Codex-led work and hand-offs" \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'Luna (`gpt-5.6-luna`) at `low`' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF "repeatable extraction, classification, transformation" \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'Terra (`gpt-5.6-terra`) at' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF '`medium` for bounded analysis, implementation, or tests' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'and `high` for bounded' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF "Every owner verifies" "$repo_dir/shared/AGENTS.md"
+grep -qF "GPT-5.6 Sol owns Codex work with unresolved architecture" \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF "Independent reviews choose their effort" \
+  "$repo_dir/shared/AGENTS.md"
 grep -qF "does not require a second provider" \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "The helpers preflight authentication themselves" \
@@ -67,10 +86,42 @@ done
 
 grep -qF "read every playbook by default" \
   "$repo_dir/shared/ORCHESTRATION.md"
-grep -qF "risk-based routes" "$repo_dir/shared/playbooks/reviews.md"
+grep -qF "focused verification; no automatic review" \
+  "$repo_dir/shared/ORCHESTRATION.md"
+grep -qF '`playbooks/routing.md` is the canonical model and effort ladder' \
+  "$repo_dir/shared/ORCHESTRATION.md"
+grep -qF '| Codex owner | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Codex efficient | GPT-5.6 Luna (`gpt-5.6-luna`) | `low` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "in Claude-led work, keep the active owner or use verified Sonnet" \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "work to Sol high or Claude-led work to Fable high" \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "current entry owner integrates" \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "Review provider follows the implementation author" \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF 'prefer Sol over compensating with `xhigh`' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "Reclassify and promote the model when the task changes class" \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF 'Review routes in `reviews.md` choose effort separately' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF "One owner scopes the behavior and verification" \
+  "$repo_dir/shared/playbooks/execution.md"
 grep -qF "Never let two workers edit the same file concurrently" \
   "$repo_dir/shared/playbooks/execution.md"
+grep -qF "risk-based routes" "$repo_dir/shared/playbooks/reviews.md"
 grep -qF "shared/AGENTS.md" "$repo_dir/shared/playbooks/setup.md"
+grep -qF 'Luna (`gpt-5.6-luna`) at `low`' "$repo_dir/README.md"
+grep -qF 'Terra (`gpt-5.6-terra`) at `medium`' "$repo_dir/README.md"
+grep -qF 'Sol (`gpt-5.6-sol`) at `high`' "$repo_dir/README.md"
+grep -qF "ambiguity promotes the route to Sol" "$repo_dir/README.md"
 grep -qF "shared/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
 mkdir -p "$test_home/.claude"

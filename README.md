@@ -66,6 +66,27 @@ The helper accepts only the canonical GitHub origin, a clean fast-forward to
 `origin/main`, passing tests, and a verified reinstall. Dirty, divergent,
 missing, or failing checkouts stop safely without overwriting user work.
 
+## Codex model and reasoning routes
+
+Choose the route at the task boundary and use the lowest reasoning effort that
+meets the confidence requirement:
+
+| Task shape | Route |
+| --- | --- |
+| One clear extraction, classification, formatting, transformation, or mechanical pass | Luna (`gpt-5.6-luna`) at `low` |
+| Still-mechanical work spanning several items or checks | Luna at `medium` |
+| Normal scoped repository analysis, implementation, or tests | Terra (`gpt-5.6-terra`) at `medium` |
+| Bounded multi-file work with real tradeoffs | Terra at `high` |
+| Difficult planning, architecture, diagnosis, integration, or final judgement | Sol (`gpt-5.6-sol`) at `high`; `xhigh` for hard or critical decisions; `max` only for the hardest unresolved single-agent judgement |
+
+Prefer a stronger model when the task changes class instead of indefinitely
+raising effort on Luna or Terra. Here, bounded means a named scope, known success
+criteria and verification, and no unresolved architecture or cross-cutting
+integration; ambiguity promotes the route to Sol. A strong active owner may
+finish a tiny remaining scope directly when a hand-off would cost more than it
+saves. Independent-review routes set effort separately. Full risk, review, and
+parallelism rules live in `shared/playbooks/`.
+
 ## Vendor into one repository
 
 Copy the bootstrap plus the entire shared directory so the destination remains

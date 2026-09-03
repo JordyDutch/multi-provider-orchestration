@@ -36,9 +36,19 @@ worker, reviewer, or model call merely because one is available.
 - For a substantial, risky, multi-provider, or multi-agent task, open the
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
-- In Codex-led work, GPT-5.6 Sol owns difficult planning, integration, and final
-  judgement. In Claude-led work, Fable 5.1 owns those stages. Efficient tiers
-  handle clear, bounded support work; the owner verifies returned results.
+- In Codex-led work and hand-offs, use Luna (`gpt-5.6-luna`) at `low` for
+  repeatable extraction, classification, transformation, formatting, or
+  mechanical edits; `medium` for multi-item work. Use Terra (`gpt-5.6-terra`) at
+  `medium` for bounded analysis, implementation, or tests, and `high` for bounded
+  multi-file tradeoffs.
+- In Claude-led bounded mechanical work, keep the owner or use
+  live-verified Sonnet 5 at `low`/`medium` when worthwhile. Every owner verifies
+  hand-offs.
+- GPT-5.6 Sol owns Codex work with unresolved architecture, cross-cutting
+  integration, hard diagnosis, conflicting evidence, or critical decisions:
+  normally `high`, `xhigh` for a decisive hard stage, and `max` only for the
+  hardest unresolved judgement. Fable 5.1 owns equivalent
+  Claude-led work. Independent reviews choose their effort.
 - Pin Claude Opus to exact `claude-opus-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
 - Require an opposite-provider review for security, authentication,
@@ -46,9 +56,9 @@ worker, reviewer, or model call merely because one is available.
   architecture, unfamiliar behavioral changes, conflicting evidence, and hard
   diagnoses. A primary-source-backed factual lookup or deterministic change with
   decisive verification does not require a second provider.
-- Match review effort to risk. Normal bounded work uses the normal strong route;
-  reserve `xhigh`, `max`, extra reviewers, and duplicate implementation for
-  concrete complexity or consequence.
+- Match owner and worker effort to risk. Reserve `xhigh`, `max`, extra reviewers,
+  and duplicate implementation for concrete complexity or consequence; review
+  routes choose effort separately by authorship and risk.
 - Run `claude-review`, `fable-review`, and Claude authentication checks in host
   context. The helpers preflight authentication themselves, so do not run a
   separate auth check unless a helper fails.
