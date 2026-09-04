@@ -56,7 +56,7 @@ grep -qF 'and `high` for bounded' \
 grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "Every owner verifies" "$repo_dir/shared/AGENTS.md"
-grep -qF "GPT-5.6 Sol owns Codex work with unresolved architecture" \
+grep -qF 'Sol (`gpt-5.6-sol`) owns complex Codex work' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "Independent reviews choose their effort" \
   "$repo_dir/shared/AGENTS.md"
@@ -149,6 +149,10 @@ cmp -s \
   "$repo_dir/scripts/sol-review.sh" \
   "$test_home/.local/bin/sol-review"
 cmp -s \
+  "$repo_dir/scripts/sol-review.sh" \
+  "$test_home/.local/bin/astra-review"
+test -x "$test_home/.local/bin/astra-review"
+cmp -s \
   "$repo_dir/scripts/refresh-global-setup.sh" \
   "$test_home/.local/bin/refresh-global-setup"
 test "$(grep -c -xF '@~/.codex/AGENTS.md' \
@@ -201,7 +205,9 @@ printf '%s\n' \
   '  exit 0' \
   'fi' \
   'printf "%s\n" "$@" >"$CAPTURE_ARGS"' \
-  'cat >"$CAPTURE_STDIN"' >"$fake_bin/codex"
+  'cat >"$CAPTURE_STDIN"' \
+  'if [ -n "${CAPTURE_CALLS:-}" ]; then printf "%s\n" call >>"$CAPTURE_CALLS"; fi' \
+  'exit "${FAKE_CODEX_STATUS:-0}"' >"$fake_bin/codex"
 
 chmod +x "$fake_bin/claude" "$fake_bin/codex"
 cp "$repo_dir/scripts/claude-review.sh" "$fake_bin/claude-review"
@@ -234,7 +240,7 @@ grep -qxF "Read,Grep,Glob" "$test_home/fable.args"
 grep -qxF -- "--strict-mcp-config" "$test_home/fable.args"
 grep -qxF -- "--disable-slash-commands" "$test_home/fable.args"
 grep -qxF -- "--exclude-dynamic-system-prompt-sections" "$test_home/fable.args"
-grep -qF "Sol retains final integration" "$test_home/fable.stdin"
+grep -qF "The calling orchestrator retains final integration" "$test_home/fable.stdin"
 grep -qF "=== git diff HEAD ===" "$test_home/fable.stdin"
 grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/fable.stdin"
 if grep -qF "=== unstaged diff ===" "$test_home/fable.stdin" || \
@@ -267,7 +273,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
 
 grep -qxF "claude-fable-5-1" "$test_home/fable-env.args"
 grep -qxF "xhigh" "$test_home/fable-env.args"
-grep -qF "Sol retains final integration" "$test_home/fable-env.stdin"
+grep -qF "The calling orchestrator retains final integration" "$test_home/fable-env.stdin"
 
 PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
@@ -459,6 +465,8 @@ test ! -e "$test_home/fable-alias.args"
 printf '%s\n' "after-sol" >"$review_repo/tracked.txt"
 
 PATH="$fake_bin:/usr/bin:/bin" \
+  ASTRA_REVIEW_MODEL=unavailable ASTRA_REVIEW_EFFORT=max ASTRA_REVIEW_MODE=invalid \
+  ASTRA_REVIEW_DIFF_PATH=../private ASTRA_REVIEW_MAX_DIFF_BYTES=1 \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/sol.args" \
   CAPTURE_STDIN="$test_home/sol.stdin" \
@@ -467,7 +475,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
 grep -qxF "gpt-5.6-sol" "$test_home/sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/sol.args"
 grep -qxF "read-only" "$test_home/sol.args"
-grep -qF "Fable retains final integration" "$test_home/sol.stdin"
+grep -qF "The calling orchestrator retains final integration" "$test_home/sol.stdin"
 grep -qF "=== git diff HEAD ===" "$test_home/sol.stdin"
 grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
 
@@ -630,5 +638,114 @@ fi
 grep -qF "no tracked or untracked changes found" \
   "$test_home/unborn-missing-sol.stderr"
 test ! -e "$test_home/unborn-missing-sol.args"
+
+# Exercise the installed Astra entry point, including isolation from Sol settings.
+cd "$review_repo"
+printf '%s\n' "astra-change" >tracked.txt
+astra_helper="$test_home/.local/bin/astra-review"
+PATH="$fake_bin:/usr/bin:/bin" \
+  SOL_REVIEW_MODEL=unavailable SOL_REVIEW_EFFORT=max SOL_REVIEW_MODE=invalid \
+  SOL_REVIEW_DIFF_PATH=../private SOL_REVIEW_MAX_DIFF_BYTES=1 \
+  CAPTURE_ARGS="$test_home/astra.args" \
+  CAPTURE_STDIN="$test_home/astra.stdin" \
+  "$astra_helper" "Review only." >/dev/null
+grep -qxF "gpt-6-astra" "$test_home/astra.args"
+grep -qxF 'model_reasoning_effort="high"' "$test_home/astra.args"
+grep -qxF "read-only" "$test_home/astra.args"
+grep -qxF -- "--ephemeral" "$test_home/astra.args"
+grep -qF "The calling orchestrator retains final integration" "$test_home/astra.stdin"
+grep -qF "+astra-change" "$test_home/astra.stdin"
+
+printf '%s\n' "unrelated" >unrelated-astra.txt
+PATH="$fake_bin:/usr/bin:/bin" \
+  ASTRA_REVIEW_DIFF_PATH=tracked.txt ASTRA_REVIEW_EFFORT=xhigh \
+  CAPTURE_ARGS="$test_home/astra-scoped.args" \
+  CAPTURE_STDIN="$test_home/astra-scoped.stdin" \
+  "$astra_helper" "Review only." >/dev/null
+grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/astra-scoped.args"
+grep -qF "=== git diff HEAD -- tracked.txt ===" "$test_home/astra-scoped.stdin"
+if grep -qF "unrelated-astra.txt" "$test_home/astra-scoped.stdin"; then
+  printf '%s\n' "Scoped Astra review leaked an unrelated path." >&2
+  exit 1
+fi
+rm unrelated-astra.txt
+
+for invalid_setting in \
+  ASTRA_REVIEW_MODEL=gpt-5.6-sol \
+  ASTRA_REVIEW_MODEL=astra \
+  ASTRA_REVIEW_EFFORT=ultra \
+  ASTRA_REVIEW_EFFORT=invalid \
+  ASTRA_REVIEW_MODE=invalid \
+  ASTRA_REVIEW_DIFF_PATH=../tracked.txt \
+  ASTRA_REVIEW_DIFF_PATH=/tmp/tracked.txt \
+  ASTRA_REVIEW_MAX_DIFF_BYTES=0 \
+  ASTRA_REVIEW_MAX_DIFF_BYTES=1; do
+  if env PATH="$fake_bin:/usr/bin:/bin" "$invalid_setting" \
+    CAPTURE_ARGS="$test_home/astra-invalid.args" \
+    CAPTURE_STDIN="$test_home/astra-invalid.stdin" \
+    "$astra_helper" "Review only." \
+    >"$test_home/astra-invalid.stdout" 2>"$test_home/astra-invalid.stderr"; then
+    printf 'Expected Astra setting to fail closed: %s\n' "$invalid_setting" >&2
+    exit 1
+  fi
+  grep -qF "Astra review unavailable:" "$test_home/astra-invalid.stderr"
+  test ! -e "$test_home/astra-invalid.args"
+done
+
+# A renamed shared helper must not silently drop Astra's model or path scope.
+cp "$astra_helper" "$fake_bin/unknown-review"
+if PATH="$fake_bin:/usr/bin:/bin" ASTRA_REVIEW_DIFF_PATH=tracked.txt \
+  CAPTURE_ARGS="$test_home/unknown-review.args" \
+  CAPTURE_STDIN="$test_home/unknown-review.stdin" \
+  "$fake_bin/unknown-review" "Review only." \
+  >"$test_home/unknown-review.stdout" 2>"$test_home/unknown-review.stderr"; then
+  printf '%s\n' "Expected an unknown helper name to fail closed." >&2
+  exit 1
+fi
+grep -qF "invoke as sol-review or astra-review" "$test_home/unknown-review.stderr"
+test ! -e "$test_home/unknown-review.args"
+
+for invalid_effort in ultra invalid; do
+  if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_EFFORT="$invalid_effort" \
+    CAPTURE_ARGS="$test_home/sol-invalid-effort.args" \
+    CAPTURE_STDIN="$test_home/sol-invalid-effort.stdin" \
+    "$test_home/.local/bin/sol-review" "Review only." \
+    >"$test_home/sol-invalid-effort.stdout" 2>"$test_home/sol-invalid-effort.stderr"; then
+    printf '%s\n' "Expected invalid Sol effort to fail closed." >&2
+    exit 1
+  fi
+  grep -qF "SOL_REVIEW_EFFORT must be" "$test_home/sol-invalid-effort.stderr"
+  test ! -e "$test_home/sol-invalid-effort.args"
+done
+
+# An unavailable model must preserve the failure, with no hidden fallback call.
+astra_status=0
+PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
+  CAPTURE_CALLS="$test_home/astra-failure.calls" \
+  CAPTURE_ARGS="$test_home/astra-failure.args" \
+  CAPTURE_STDIN="$test_home/astra-failure.stdin" \
+  "$astra_helper" "Review only." >/dev/null || astra_status=$?
+test "$astra_status" -eq 42
+test "$(wc -l <"$test_home/astra-failure.calls")" -eq 1
+grep -qxF "gpt-6-astra" "$test_home/astra-failure.args"
+
+git checkout -- tracked.txt
+if PATH="$fake_bin:/usr/bin:/bin" \
+  CAPTURE_ARGS="$test_home/astra-empty.args" \
+  CAPTURE_STDIN="$test_home/astra-empty.stdin" \
+  "$astra_helper" "Review only." \
+  >"$test_home/astra-empty.stdout" 2>"$test_home/astra-empty.stderr"; then
+  printf '%s\n' "Expected an empty Astra review to fail closed." >&2
+  exit 1
+fi
+grep -qF "Set ASTRA_REVIEW_MODE=audit" "$test_home/astra-empty.stderr"
+test ! -e "$test_home/astra-empty.args"
+
+PATH="$fake_bin:/usr/bin:/bin" ASTRA_REVIEW_MODE=audit ASTRA_REVIEW_EFFORT=max \
+  CAPTURE_ARGS="$test_home/astra-audit.args" \
+  CAPTURE_STDIN="$test_home/astra-audit.stdin" \
+  "$astra_helper" "Audit only." >/dev/null
+grep -qxF 'model_reasoning_effort="max"' "$test_home/astra-audit.args"
+grep -qF "=== git diff HEAD ===" "$test_home/astra-audit.stdin"
 
 printf '%s\n' "All orchestration tests passed."

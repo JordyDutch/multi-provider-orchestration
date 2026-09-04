@@ -52,7 +52,8 @@ integration.
 
 ### Critical or hard work
 
-1. Sol or Fable owns a bounded plan at high/xhigh.
+1. Astra owns hard or critical Codex scopes at high/xhigh when available; Sol
+   owns ordinary complex work. Fable owns equivalent Claude-led work.
 2. Strong models handle decisive scopes; efficient tiers handle only explicit
    support work.
 3. Run focused and broader verification.

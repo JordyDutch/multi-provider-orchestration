@@ -47,8 +47,9 @@ cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
 cp -R shared /path/to/repo/shared
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
+cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 chmod +x /path/to/repo/scripts/claude-review.sh \
-  /path/to/repo/scripts/sol-review.sh
+  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review
 ```
 
 Add repository-specific rules under `## This repo` in the destination root
@@ -56,13 +57,20 @@ Add repository-specific rules under `## This repo` in the destination root
 
 ## Defaults
 
-A quality-first general Codex default remains:
+A general Codex default remains:
 
 ```toml
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 ```
 
-Use explicit Terra or Luna routes for known bounded work rather than creating a
-second scout by default. Use model and effort overrides only after checking the
-current catalog described in `routing.md`.
+Use Astra explicitly for the hardest or critical work after checking client
+access, with `high` as the starting effort (`xhigh` for a decisive hard stage):
+
+```sh
+codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
+```
+
+The installer adds `astra-review` alongside `sol-review`; it does not change
+`config.toml`, existing tasks, or other machines. Use Terra and Luna for bounded
+work. Routing instructions guide selection; they are not an automatic dispatcher.

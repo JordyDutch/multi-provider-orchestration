@@ -61,6 +61,8 @@ backup_if_different \
 backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 backup_if_different \
+  "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
+backup_if_different \
   "$repo_dir/scripts/refresh-global-setup.sh" \
   "$local_bin_dir/refresh-global-setup"
 
@@ -79,6 +81,8 @@ install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/fable-review"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
   "$local_bin_dir/sol-review"
+install -m 755 "$repo_dir/scripts/sol-review.sh" \
+  "$local_bin_dir/astra-review"
 install -m 755 "$repo_dir/scripts/refresh-global-setup.sh" \
   "$local_bin_dir/refresh-global-setup"
 
@@ -101,6 +105,7 @@ verify_copy \
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
+verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
 verify_copy \
   "$repo_dir/scripts/refresh-global-setup.sh" \
   "$local_bin_dir/refresh-global-setup"
@@ -114,6 +119,7 @@ printf '%s\n' \
   "  $local_bin_dir/claude-review" \
   "  $local_bin_dir/fable-review" \
   "  $local_bin_dir/sol-review" \
+  "  $local_bin_dir/astra-review" \
   "  $local_bin_dir/refresh-global-setup" \
   "Claude import preserved in $claude_rules"
 
@@ -153,6 +159,19 @@ if [ "$fresh_sol" = "$local_bin_dir/sol-review" ]; then
 else
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/sol-review." \
+    "Add $local_bin_dir to PATH in your shell configuration." >&2
+fi
+
+fresh_astra=''
+if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
+  fresh_astra="$("$SHELL" -lic 'command -v astra-review' 2>/dev/null || true)"
+fi
+
+if [ "$fresh_astra" = "$local_bin_dir/astra-review" ]; then
+  printf 'Fresh shell resolves astra-review at %s\n' "$fresh_astra"
+else
+  printf '%s\n' \
+    "Warning: a fresh shell does not resolve $local_bin_dir/astra-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi
 

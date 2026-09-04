@@ -23,11 +23,14 @@ review necessary. Do not use a vague `substantial` label as the only trigger.
 | Normal bounded Codex-authored behavior | Opus 5 (`claude-opus-5`) at high |
 | Complex or cross-cutting Codex-authored work | Fable 5.1 (`claude-fable-5-1`) at xhigh |
 | Normal bounded Claude-authored behavior | Sol at xhigh |
-| Critical Claude-authored work | Sol at max when supported |
+| Complex or cross-cutting Claude-authored work | Astra (`gpt-6-astra`) at high |
+| Critical Claude-authored work | Astra at xhigh; max only for the hardest unresolved judgement |
 | Critical Codex-authored work | Fable 5.1 at xhigh; add Opus 5 at high only when a second Claude perspective materially reduces risk |
 
 These are risk-based routes, not an automatic one-rung surcharge. The owner may
 escalate from concrete evidence and retains final integration responsibility.
+If Astra cannot review the change, report it; use Sol xhigh/max once if adequate.
+Otherwise stop the affected scope. Helpers never automatically downgrade.
 
 ## Claude helpers from Codex
 
@@ -71,7 +74,8 @@ context optimization.
 
 Both review helpers fail before a model call when their diff plus status evidence
 exceeds 200,000 bytes. Scope the review path first; only then explicitly raise
-`CLAUDE_REVIEW_MAX_DIFF_BYTES` or `SOL_REVIEW_MAX_DIFF_BYTES` when the complete
+`CLAUDE_REVIEW_MAX_DIFF_BYTES`, `SOL_REVIEW_MAX_DIFF_BYTES`, or
+`ASTRA_REVIEW_MAX_DIFF_BYTES` when the complete
 larger diff is genuinely required.
 
 Override effort explicitly when the risk table requires a stronger route:
@@ -79,7 +83,7 @@ Override effort explicitly when the risk table requires a stronger route:
 ```sh
 CLAUDE_REVIEW_EFFORT=xhigh claude-review \
   "Review this unusually subtle security boundary."
-SOL_REVIEW_EFFORT=max sol-review \
+ASTRA_REVIEW_EFFORT=xhigh astra-review \
   "Review this critical Claude-authored auth change."
 ```
 
@@ -89,15 +93,23 @@ timeout, terminate cleanly and retry Opus 5 once at medium with the exact diff
 and repository tools disabled. If that retry fails, use Fable 5.1 once and
 report the fallback; never substitute an older Opus model.
 
-## Sol helper from Claude
+## Codex helpers from Claude
 
-`sol-review` is the symmetric read-only hand-off. It pins Sol, uses an ephemeral
-read-only Codex session, and keeps Fable as owner.
+`sol-review` defaults to Sol at xhigh; `astra-review` pins exact `gpt-6-astra`
+at high. Both use an ephemeral read-only Codex session and keep the calling
+Claude orchestrator as owner. One shared script selects the route by executable
+name. Astra reads only `ASTRA_REVIEW_*`; existing `SOL_REVIEW_*` settings cannot
+silently redirect it. A model-call failure returns failure without a fallback.
+Unknown executable names and efforts outside low/medium/high/xhigh/max fail
+closed; `ultra` is not allowed in review hand-offs.
 
 ```sh
 sol-review "Review the current change for concrete defects and missing tests."
 SOL_REVIEW_MODE=audit sol-review "Audit only the named repository paths."
 SOL_REVIEW_DIFF_PATH=src/auth sol-review "Review only this path."
+astra-review "Review this complex Claude-authored change."
+ASTRA_REVIEW_MODE=audit astra-review "Audit only the named repository paths."
+ASTRA_REVIEW_DIFF_PATH=src/auth astra-review "Review only this path."
 ```
 
 ## Evidence contract

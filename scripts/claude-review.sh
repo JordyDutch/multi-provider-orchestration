@@ -57,11 +57,7 @@ case "$max_diff_bytes" in
     ;;
 esac
 
-if [ "$model" = "claude-fable-5-1" ]; then
-  role_preamble="You are a bounded independent reviewer in a Sol-led workflow. Sol retains final integration and synthesis ownership. Use the supplied diff as primary evidence, inspect only the smallest additional repository context needed, return a final verdict promptly, and do not widen the task or claim final ownership."
-else
-  role_preamble="You are a bounded independent Claude reviewer. The calling orchestrator retains final integration and synthesis ownership. Use the supplied diff as primary evidence, inspect only the smallest additional repository context needed, return a final verdict promptly, and do not widen the task or claim final ownership."
-fi
+role_preamble="You are a bounded independent Claude reviewer. The calling orchestrator retains final integration and synthesis ownership. Use the supplied diff as primary evidence, inspect only the smallest additional repository context needed, return a final verdict promptly, and do not widen the task or claim final ownership."
 
 claude_bin="$(command -v claude 2>/dev/null || true)"
 if [ -z "$claude_bin" ] && [ -x "$HOME/.local/bin/claude" ]; then
