@@ -20,7 +20,7 @@ for people who clone the repository before installing it.
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
 | `scripts/claude-review.sh` | Focused read-only Opus 5 or Fable 5.1 review hand-off. |
-| `scripts/sol-review.sh` | Symmetric read-only Sol review hand-off. |
+| `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
 ## Install globally
@@ -35,7 +35,7 @@ The installer:
 
 - copies `shared/AGENTS.md` to `~/.codex/AGENTS.md`;
 - copies the shared router and playbooks to `~/.codex`;
-- installs `claude-review`, `fable-review`, `sol-review`, and
+- installs `claude-review`, `fable-review`, `sol-review`, `astra-review`, and
   `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
@@ -77,7 +77,9 @@ meets the confidence requirement:
 | Still-mechanical work spanning several items or checks | Luna at `medium` |
 | Normal scoped repository analysis, implementation, or tests | Terra (`gpt-5.6-terra`) at `medium` |
 | Bounded multi-file work with real tradeoffs | Terra at `high` |
-| Difficult planning, architecture, diagnosis, integration, or final judgement | Sol (`gpt-5.6-sol`) at `high`; `xhigh` for hard or critical decisions; `max` only for the hardest unresolved single-agent judgement |
+| Complex planning, implementation, and integration | Sol (`gpt-5.6-sol`) at `high` |
+| Hardest end-to-end workflows, cross-system architecture, hard diagnosis, or conflicting evidence | Astra (`gpt-6-astra`) at `high`; `xhigh` for the decisive hard stage |
+| Critical decisions involving security, funds, data loss, or costly architecture | Astra at `xhigh`; `max` only for the hardest unresolved single-agent judgement |
 
 Prefer a stronger model when the task changes class instead of indefinitely
 raising effort on Luna or Terra. Here, bounded means a named scope, known success
@@ -86,6 +88,16 @@ integration; ambiguity promotes the route to Sol. A strong active owner may
 finish a tiny remaining scope directly when a hand-off would cost more than it
 saves. Independent-review routes set effort separately. Full risk, review, and
 parallelism rules live in `shared/playbooks/`.
+
+Astra complements Sol, Terra, and Luna. Verify access on the current client;
+catalog presence alone does not prove entitlement. If Astra cannot own the task,
+report it and use Sol high/xhigh once only when adequate; otherwise stop the
+affected scope. The installer adds routing instructions and helpers, without changing
+`config.toml`, existing tasks, or remote hosts. These instructions guide model
+selection; there is no automatic dispatcher.
+
+Model roles follow [OpenAI's model guidance](https://learn.chatgpt.com/docs/models),
+checked on 2026-09-04. Efforts are workflow choices, not catalog defaults.
 
 ## Vendor into one repository
 
@@ -97,8 +109,9 @@ cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
 cp -R shared /path/to/repo/shared
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
+cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 chmod +x /path/to/repo/scripts/claude-review.sh \
-  /path/to/repo/scripts/sol-review.sh
+  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
@@ -118,6 +131,7 @@ untracked changes:
 claude-review "Review the changed behavior and missing tests."
 fable-review "Review this cross-cutting change."
 sol-review "Review the changed behavior and missing tests."
+astra-review "Review this complex Claude-authored change."
 ```
 
 For an intentional clean-tree audit, opt in explicitly:
@@ -125,6 +139,7 @@ For an intentional clean-tree audit, opt in explicitly:
 ```sh
 CLAUDE_REVIEW_MODE=audit claude-review "Audit only the named files."
 SOL_REVIEW_MODE=audit sol-review "Audit only the named files."
+ASTRA_REVIEW_MODE=audit astra-review "Audit only the named files."
 ```
 
 Limit evidence to one relative file or directory when unrelated work exists:
@@ -132,6 +147,7 @@ Limit evidence to one relative file or directory when unrelated work exists:
 ```sh
 CLAUDE_REVIEW_DIFF_PATH=src/auth claude-review "Review this path only."
 SOL_REVIEW_DIFF_PATH=src/auth sol-review "Review this path only."
+ASTRA_REVIEW_DIFF_PATH=src/auth astra-review "Review this path only."
 ```
 
 The Claude wrapper sends one combined `git diff HEAD` (or both the staged diff
@@ -143,9 +159,14 @@ CLIs retain explicit allow/deny lists and print notices for unavailable context
 optimizations. Both wrappers reject absolute paths and parent traversal, and
 fail before a model call when diff-plus-status evidence exceeds 200,000 bytes.
 Prefer a path scope; raise
-`CLAUDE_REVIEW_MAX_DIFF_BYTES` or `SOL_REVIEW_MAX_DIFF_BYTES` only explicitly.
-Use `CLAUDE_REVIEW_EFFORT=xhigh` or `SOL_REVIEW_EFFORT=max` when the critical
-routing table requires stronger review.
+`CLAUDE_REVIEW_MAX_DIFF_BYTES`, `SOL_REVIEW_MAX_DIFF_BYTES`, or
+`ASTRA_REVIEW_MAX_DIFF_BYTES` only explicitly. `astra-review` pins `gpt-6-astra`
+at high and reads only `ASTRA_REVIEW_*` settings; it never automatically falls
+back to Sol. Use `ASTRA_REVIEW_EFFORT=xhigh` for critical Claude-authored work,
+or `max` only for the hardest unresolved judgement. `sol-review` retains its
+existing defaults and `SOL_REVIEW_*` overrides.
+Both Codex routes reject unknown executable names and efforts outside
+low/medium/high/xhigh/max; `ultra` is not allowed in review hand-offs.
 
 Run Claude helpers outside the Codex filesystem/process sandbox. They preflight
 authentication themselves, so a separate `claude auth status` immediately before
