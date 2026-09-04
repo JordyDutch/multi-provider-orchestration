@@ -44,11 +44,11 @@ worker, reviewer, or model call merely because one is available.
 - In Claude-led bounded mechanical work, keep the owner or use
   live-verified Sonnet 5 at `low`/`medium` when worthwhile. Every owner verifies
   hand-offs.
-- Sol (`gpt-5.6-sol`) owns complex Codex work at `high`. Astra
-  (`gpt-6-astra`) owns the hardest cross-system work at `high`; use `xhigh` for
-  hard diagnosis, conflicting evidence, or critical decisions, and `max` only
-  for the hardest unresolved judgement. Verify access and report fallbacks.
-  Fable 5.1 owns Claude-led work. Independent reviews choose their effort.
+- Astra (`gpt-6-astra`) owns Codex orchestration at `high`; use `xhigh` for
+  decisive hard stages. Sol (`gpt-5.6-sol`) handles complex execution and analysis
+  at `high`, and normal or complex Claude-code reviews at `xhigh`.
+  Fable 5.1 owns Claude-led orchestration and complex Claude tasks;
+  prefer Opus 5 for frontend/UX. Independent reviews choose their effort.
 - Pin Claude Opus to exact `claude-opus-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
 - Require an opposite-provider review for security, authentication,

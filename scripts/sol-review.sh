@@ -24,6 +24,10 @@ case "$(basename "$0")" in
     review_mode="${SOL_REVIEW_MODE:-review}"
     diff_path="${SOL_REVIEW_DIFF_PATH:-}"
     max_diff_bytes="${SOL_REVIEW_MAX_DIFF_BYTES:-200000}"
+    if [ "$model" != "gpt-5.6-sol" ]; then
+      echo "Sol review unavailable: model must be pinned to gpt-5.6-sol; use astra-review for Astra." >&2
+      exit 64
+    fi
     ;;
   *)
     echo "Codex review unavailable: invoke as sol-review or astra-review (optionally with .sh)." >&2
@@ -31,7 +35,7 @@ case "$(basename "$0")" in
     ;;
 esac
 prompt="${*:-Review the current change adversarially for concrete bugs, regressions, and missing tests. Return findings ordered by severity with file and line evidence. Do not edit files.}"
-role_preamble="You are a bounded independent reviewer in a Claude-led workflow. The calling orchestrator retains final integration and synthesis ownership. Do not edit files, widen the task, or claim final ownership."
+role_preamble="You are a bounded independent reviewer of Claude-authored code. The calling orchestrator retains final integration and synthesis ownership. Do not edit files, widen the task, or claim final ownership."
 
 case "$effort" in
   low|medium|high|xhigh|max)
