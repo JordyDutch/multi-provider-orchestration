@@ -56,7 +56,13 @@ grep -qF 'and `high` for bounded' \
 grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "Every owner verifies" "$repo_dir/shared/AGENTS.md"
-grep -qF 'Sol (`gpt-5.6-sol`) owns complex Codex work' \
+grep -qF 'Astra (`gpt-6-astra`) owns Codex orchestration' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'Sol (`gpt-5.6-sol`) handles complex execution and analysis' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'Fable 5.1 owns Claude-led orchestration' \
+  "$repo_dir/shared/AGENTS.md"
+grep -qF 'prefer Opus 5 for frontend/UX' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "Independent reviews choose their effort" \
   "$repo_dir/shared/AGENTS.md"
@@ -90,7 +96,13 @@ grep -qF "focused verification; no automatic review" \
   "$repo_dir/shared/ORCHESTRATION.md"
 grep -qF '`playbooks/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/shared/ORCHESTRATION.md"
-grep -qF '| Codex owner | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` |' \
+grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Codex complex specialist | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
+  "$repo_dir/shared/playbooks/routing.md"
+grep -qF '| Claude coding/review | Opus 5 (`claude-opus-5`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` |' \
   "$repo_dir/shared/playbooks/routing.md"
@@ -100,7 +112,7 @@ grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF "in Claude-led work, keep the active owner or use verified Sonnet" \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF "work to Sol high or Claude-led work to Fable high" \
+grep -qF "Claude is not limited to reviewing Codex. A hand-off never transfers ownership." \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF "current entry owner integrates" \
   "$repo_dir/shared/playbooks/routing.md"
@@ -117,11 +129,16 @@ grep -qF "One owner scopes the behavior and verification" \
 grep -qF "Never let two workers edit the same file concurrently" \
   "$repo_dir/shared/playbooks/execution.md"
 grep -qF "risk-based routes" "$repo_dir/shared/playbooks/reviews.md"
+grep -qF '| Complex or cross-cutting Claude-authored work | Sol at xhigh |' \
+  "$repo_dir/shared/playbooks/reviews.md"
+grep -qF 'follow the implementation author, not the orchestrator' \
+  "$repo_dir/shared/playbooks/reviews.md"
 grep -qF "shared/AGENTS.md" "$repo_dir/shared/playbooks/setup.md"
 grep -qF 'Luna (`gpt-5.6-luna`) at `low`' "$repo_dir/README.md"
 grep -qF 'Terra (`gpt-5.6-terra`) at `medium`' "$repo_dir/README.md"
 grep -qF 'Sol (`gpt-5.6-sol`) at `high`' "$repo_dir/README.md"
-grep -qF "ambiguity promotes the route to Sol" "$repo_dir/README.md"
+grep -qF "Astra owns Codex orchestration; Fable owns Claude orchestration." \
+  "$repo_dir/README.md"
 grep -qF "shared/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
 mkdir -p "$test_home/.claude"
@@ -478,6 +495,29 @@ grep -qxF "read-only" "$test_home/sol.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/sol.stdin"
 grep -qF "=== git diff HEAD ===" "$test_home/sol.stdin"
 grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
+
+# The installed Sol entry point keeps its exact model even with Astra settings.
+PATH="$fake_bin:/usr/bin:/bin" \
+  SOL_REVIEW_MODEL=gpt-5.6-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
+  CAPTURE_ARGS="$test_home/installed-sol.args" \
+  CAPTURE_STDIN="$test_home/installed-sol.stdin" \
+  "$test_home/.local/bin/sol-review" "Review only." >/dev/null
+grep -qxF "gpt-5.6-sol" "$test_home/installed-sol.args"
+grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
+grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
+
+for invalid_model in gpt-6-astra gpt-5.6-terra sol unavailable; do
+  if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
+    CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
+    CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
+    "$test_home/.local/bin/sol-review" "Review only." \
+    >"$test_home/sol-invalid-model.stdout" 2>"$test_home/sol-invalid-model.stderr"; then
+    printf 'Expected Sol model override to fail closed: %s\n' "$invalid_model" >&2
+    exit 1
+  fi
+  grep -qF "model must be pinned to gpt-5.6-sol" "$test_home/sol-invalid-model.stderr"
+  test ! -e "$test_home/sol-invalid-model.args"
+done
 
 if PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \

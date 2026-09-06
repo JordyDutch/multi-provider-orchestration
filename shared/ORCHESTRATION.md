@@ -16,8 +16,9 @@ read every playbook by default.
 
 ## Non-negotiable routes
 
-- Sol owns complex Codex work; Astra owns the hardest or critical scopes when
-  available. Fable 5.1 owns Claude-led difficult work.
+- Astra owns Codex orchestration; Fable 5.1 owns Claude orchestration. Sol handles
+  complex execution and regular complex reviews. Choose workers across providers
+  by task fit; small tasks do not require an extra orchestration call.
 - `playbooks/routing.md` is the canonical model and effort ladder; the active
   baseline summarizes the no-playbook deterministic route.
 - Every Opus route uses exact `claude-opus-5`; every Fable route uses exact

@@ -45,17 +45,17 @@ integration.
 ### Normal behavioral work
 
 1. One owner scopes the behavior and verification using `routing.md`.
-2. The owner or one bounded worker implements; avoid duplicate implementations.
+2. The owner selects Sol, Terra, Luna, or a Claude specialist by task fit;
+   prefer Opus for frontend/UX. Tiny scopes may stay with the owner.
 3. Run focused tests and inspect the integrated diff.
 4. Use one opposite-provider review when the risk triggers in `reviews.md` apply.
 5. Validate findings, fix confirmed defects, and rerun affected checks.
 
 ### Critical or hard work
 
-1. Astra owns hard or critical Codex scopes at high/xhigh when available; Sol
-   owns ordinary complex work. Fable owns equivalent Claude-led work.
-2. Strong models handle decisive scopes; efficient tiers handle only explicit
-   support work.
+1. Astra owns Codex orchestration at high/xhigh; Fable owns Claude orchestration.
+2. Sol or Claude specialists handle complex execution and analysis; efficient
+   tiers handle explicit support work. Workers return decisions to the owner.
 3. Run focused and broader verification.
 4. The opposite provider reviews the changed risk boundary at the strongest
    suitable tier.

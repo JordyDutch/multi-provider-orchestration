@@ -4,16 +4,10 @@ Read this guide when selecting models, effort, or the owning orchestrator.
 
 ## Availability
 
-Verify availability before changing routes or after a provider failure. Helpers
-preflight authentication themselves; do not duplicate their checks.
+Verify availability before changing routes or after a provider failure.
+Helpers preflight authentication; do not duplicate their checks.
 
 ```sh
-command -v claude
-command -v codex
-claude --version
-codex --version
-claude auth status
-codex login status
 codex debug models | jq -r '
   .models[]
   | select(
@@ -41,16 +35,15 @@ model. Use only efforts supported by the current client.
 
 | Role | Model | Starting effort | Use |
 | --- | --- | --- | --- |
-| Codex strongest | GPT-6 Astra (`gpt-6-astra`) | `high` | Hardest end-to-end work, cross-system architecture, hard diagnosis, conflicting evidence, and critical judgement |
-| Codex owner | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` | Difficult planning, architecture, implementation, diagnosis, integration, and final judgement |
+| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` | Planning, task allocation, integration, and final judgement |
+| Codex complex specialist | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` | Complex execution, design analysis, diagnosis, and normal or complex Claude-code reviews |
 | Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` | Scoped implementation, repository analysis, tests, and bounded support work |
 | Codex efficient | GPT-5.6 Luna (`gpt-5.6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
-| Claude owner | Fable 5.1 (`claude-fable-5-1`) | `high` | Claude-led orchestration and complex cross-cutting review |
+| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Claude-led orchestration, complex Claude implementation and analysis, and cross-cutting Codex-code reviews |
 | Claude coding/review | Opus 5 (`claude-opus-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` | Low-risk bulk reading and mechanical support after live verification |
 
-These are workflow starting efforts, not catalog defaults. Use the lowest
-effort that meets the confidence need.
+Efforts are workflow choices; use the lowest sufficient level.
 
 Never use bare or `latest` aliases for pinned Opus and Fable routes.
 
@@ -60,18 +53,20 @@ Never use bare or `latest` aliases for pinned Opus and Fable routes.
 | --- | --- | --- |
 | Deterministic inventory, extraction, formatting, transformation, or mechanical edit | In Codex-led work, Luna low for one clear pass, Luna medium for several items or checks, or Terra medium when criteria require judgement; in Claude-led work, keep the active owner or use verified Sonnet low/medium when the hand-off is worthwhile | None when checks are decisive |
 | Normal scoped behavior change | Terra medium; Terra high for multiple files or real tradeoffs; Opus high when Claude is the better implementation fit; current entry owner integrates | Review provider follows the implementation author when behavior, unfamiliarity, or uncertainty warrants it; use `reviews.md` |
-| Substantial multi-file work | Sol high or Fable high owns; bounded workers by fit | One normal strong opposite-provider review |
-| Hardest cross-system work, hard diagnosis, or conflicting evidence | Astra high; xhigh for the unresolved question; Fable xhigh when Claude-led | Independent second opinion |
+| Substantial multi-file work | Astra/Fable owns by entry provider; Sol high or Claude specialists execute named scopes | One normal strong opposite-provider review |
+| Hardest cross-system work, hard diagnosis, or conflicting evidence | Astra/Fable owns at high; xhigh for the unresolved question, with Sol or Claude analysis as useful | Independent second opinion |
 | Security, auth, permissions, funds, destructive change, data loss, migration, costly architecture | Astra/Fable xhigh; max only for the hardest remaining judgement | Mandatory strongest suitable opposite-provider review |
-| Large task with truly independent workstreams | Sol or Astra by complexity; ultra only when supported, or bounded workers | Owner synthesis plus risk-appropriate review |
+| Large task with truly independent workstreams | Astra/Fable owns; bounded workers, or ultra only when supported | Owner synthesis plus risk-appropriate review |
 
 `Bounded` means named scope, known success criteria and checks, and no unresolved
-architecture or cross-cutting integration. Otherwise promote ambiguous Codex
-work to Sol high or Claude-led work to Fable high.
+architecture or integration. Promote ambiguous execution to Sol high or Fable
+high for analysis; the calling owner decides architecture and integrates.
 
-Use Astra for a concrete complexity or consequence, not task size alone. Keep Sol
-for ordinary complex work. Skip scouts that cost more than doing the work; never
-rerun a successful task at every tier.
+Choose specialists across providers under either owner: prefer Opus for
+frontend/UX and substantive Claude implementation, Fable for complex Claude
+tasks, and verified Sonnet low/medium for useful mechanical Claude work.
+Claude is not limited to reviewing Codex. A hand-off never transfers ownership.
+Do not add an orchestration call for a small task or rerun success at every tier.
 
 ## Effort
 
@@ -79,8 +74,7 @@ rerun a successful task at every tier.
   a live-verified Claude efficient tier.
 - `medium`: normal scoped planning, implementation, and checking, normally
   Terra; use Luna or a Claude efficient tier only while work stays mechanical.
-- `high`: multi-file tradeoffs or ownership; Terra for bounded work, otherwise
-  Sol, Astra, Fable, or Opus by role.
+- `high`: multi-file tradeoffs, complex execution, or orchestration by role.
 - `xhigh`: difficult diagnosis, security, or ambiguous design; use on the small
   decisive stage.
 - `max`: hardest remaining single-agent judgement, not a default.
@@ -91,13 +85,12 @@ Review routes in `reviews.md` choose effort separately by authorship and risk.
 When a Luna task starts needing open-ended planning or behavioral judgement,
 prefer Terra over raising Luna above medium. When a Terra task starts needing
 work outside the bounded definition, prefer Sol over compensating with `xhigh`
-or `max`. Reclassify and promote the model when the task changes class. If a
-strong current owner already has the full context and the remaining scope is
-tiny, do not create a hand-off solely to move down a tier.
+or `max`. Reclassify and promote the model when the task changes class. The
+active owner can finish tiny scopes directly when a hand-off costs more.
 
-Escalate Sol to Astra for unresolved hard or critical judgement. Keep one owner
-through integration; when escalation is necessary, use one compact hand-off at
-the decisive stage instead of repeated planning and synthesis calls.
+Return unresolved hard decisions to the calling owner in one compact hand-off.
+Ownership does not mean writing every patch: use Sol and other specialists for
+meaningful execution scopes.
 
 ## Live sources
 

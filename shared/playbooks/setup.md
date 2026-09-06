@@ -57,20 +57,25 @@ Add repository-specific rules under `## This repo` in the destination root
 
 ## Defaults
 
-A general Codex default remains:
+For Codex-led orchestration, use Astra as the entry owner after verifying access:
 
 ```toml
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 ```
 
-Use Astra explicitly for the hardest or critical work after checking client
-access, with `high` as the starting effort (`xhigh` for a decisive hard stage):
+Use `high` normally and `xhigh` for a decisive hard stage. To select the owner
+for one session:
 
 ```sh
 codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
 ```
 
+Sol remains the complex execution and regular review specialist. Fable owns
+Claude-led sessions; use Opus for frontend/UX or implementation by fit, verified
+Sonnet for mechanical Claude work, and Terra/Luna for bounded Codex work.
+
 The installer adds `astra-review` alongside `sol-review`; it does not change
-`config.toml`, existing tasks, or other machines. Use Terra and Luna for bounded
-work. Routing instructions guide selection; they are not an automatic dispatcher.
+`config.toml`, existing tasks, or other machines. The model picker or explicit
+CLI model selects the entry session; instructions guide specialist hand-offs,
+not automatic model switching. Small tasks need no extra orchestration call.
