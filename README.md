@@ -68,45 +68,34 @@ missing, or failing checkouts stop safely without overwriting user work.
 
 ## Model and reasoning routes
 
-Choose the route at the task boundary and use the lowest reasoning effort that
-meets the confidence requirement:
-
-| Task shape | Route |
-| --- | --- |
-| One clear extraction, classification, formatting, transformation, or mechanical pass | Luna (`gpt-5.6-luna`) at `low` |
-| Still-mechanical work spanning several items or checks | Luna at `medium` |
-| Normal scoped repository analysis, implementation, or tests | Terra (`gpt-5.6-terra`) at `medium` |
-| Bounded multi-file work with real tradeoffs | Terra at `high` |
-| Complex execution, planning support, design analysis, or diagnosis | Sol (`gpt-5.6-sol`) at `high` |
-| Codex orchestration: planning, task allocation, integration, and final judgement | Astra (`gpt-6-astra`) at `high`; `xhigh` for the decisive hard stage |
-| Critical decisions involving security, funds, data loss, or costly architecture | Astra at `xhigh`; `max` only for the hardest unresolved single-agent judgement |
-| Claude orchestration and complex Claude implementation or analysis | Fable 5.1 (`claude-fable-5-1`) at `high` |
-| Frontend/UX and substantive Claude implementation | Prefer Opus 5 (`claude-opus-5`) at `high` |
-| Mechanical Claude tasks where a hand-off is useful | Sonnet 5 (`claude-sonnet-5`) at `low`/`medium`, after live access verification |
-
-Prefer a stronger model when the task changes class instead of indefinitely
-raising effort on Luna or Terra. Here, bounded means a named scope, known success
-criteria and verification, and no unresolved architecture or cross-cutting
-integration; ambiguity promotes execution to Sol or Fable for analysis, while
-the calling owner decides and integrates. A strong active owner may finish a
-tiny scope directly when a hand-off would cost more than it saves.
-
 Astra owns Codex orchestration; Fable owns Claude orchestration. Either owner
-selects specialists across providers by task fit. Sol remains a primary complex
-executor and reviewer; Claude also implements, designs, and analyzes. Ownership
-does not require the owner to write every patch or review its own work. Review
-provider follows the implementation author; full rules live in `shared/playbooks/`.
+selects specialists across providers by task fit. The canonical
+[model routing guide](shared/playbooks/routing.md) contains model IDs, roles,
+effort levels, escalation, access checks, and live sources. The baseline keeps
+only the defaults needed for small tasks that do not load a playbook.
 
-Verify access on the current client; catalog presence alone does not prove
-entitlement. If Astra cannot own the task,
-report it and use Sol high/xhigh once only when adequate; otherwise stop the
-affected scope. The installer adds routing instructions and helpers, without changing
-`config.toml`, existing tasks, or remote hosts. These instructions guide model
-selection; there is no automatic dispatcher.
+The [review guide](shared/playbooks/reviews.md) determines whether a review is
+needed and selects its provider and effort by authorship and risk. A change
+spanning many files does not require review solely because of its size.
 
-Roles and efforts are repository workflow choices. Check current model details
-in the [OpenAI documentation](https://learn.chatgpt.com/docs/models) and
-[Claude documentation](https://platform.claude.com/docs/en/about-claude/pricing).
+The installer adds instructions and helpers without changing `config.toml`,
+existing tasks, or remote hosts. Routing is instruction-guided; there is no
+automatic dispatcher.
+
+## Task completion
+
+The shared baseline calls for completing the authorized outcome, including
+verification and fixing defects caused by the change. Routine local steps use
+existing authorization. Missing information that materially affects the result
+or work outside the authorized scope still calls for user input; Git permissions
+and the daily refresh gate remain explicit boundaries.
+
+Required checks still run. After they pass, additional checks need a reason:
+new changes, failures, or unresolved risk. This keeps verification proportionate
+while preserving the separate review requirements.
+
+This layout follows the contextual guidance and completion principles in
+[OpenAI's skills and prompts article](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
 
 ## Vendor into one repository
 
@@ -186,14 +175,9 @@ the review is unnecessary. A sandbox-only `loggedIn: false` must be rechecked in
 host context before asking the user to sign in. Claude's final text is buffered;
 silence while its process lives is not a hang and must not trigger a duplicate.
 
-Review strength is based on consequence and uncertainty, not an automatic
-one-tier surcharge. Normal Codex-authored behavioral work uses Opus 5 at high;
-complex Codex-authored work uses Fable 5.1 at xhigh; normal and complex
-Claude-authored work uses Sol at xhigh. Reserve Astra reviews for exceptionally
-hard, unresolved, or critical Claude work. This applies under either owner;
-mixed contributions need independent review across providers for each scope.
-Deterministic work with decisive verification and primary-source-backed factual
-lookups may remain single-provider.
+Use the [review guide](shared/playbooks/reviews.md) to decide when these helpers
+are needed and which route fits the change. Helper availability alone does not
+require a review.
 
 ## Verify changes
 

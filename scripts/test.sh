@@ -41,37 +41,24 @@ grep -qF 'read `shared/AGENTS.md`' "$repo_dir/AGENTS.md"
 grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/shared/AGENTS.md"
 grep -qF 'exact `claude-opus-5`' "$repo_dir/shared/AGENTS.md"
 grep -qF '`claude-fable-5-1`' "$repo_dir/shared/AGENTS.md"
-grep -qF "In Codex-led work and hand-offs" \
+grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/shared/AGENTS.md"
 grep -qF 'Luna (`gpt-5.6-luna`) at `low`' \
   "$repo_dir/shared/AGENTS.md"
-grep -qF "repeatable extraction, classification, transformation" \
-  "$repo_dir/shared/AGENTS.md"
 grep -qF 'Terra (`gpt-5.6-terra`) at' \
   "$repo_dir/shared/AGENTS.md"
-grep -qF '`medium` for bounded analysis, implementation, or tests' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF 'and `high` for bounded' \
+grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
   "$repo_dir/shared/AGENTS.md"
-grep -qF "Every owner verifies" "$repo_dir/shared/AGENTS.md"
-grep -qF 'Astra (`gpt-6-astra`) owns Codex orchestration' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF 'Sol (`gpt-5.6-sol`) handles complex execution and analysis' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF 'Fable 5.1 owns Claude-led orchestration' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF 'prefer Opus 5 for frontend/UX' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF "Independent reviews choose their effort" \
+grep -qF 'playbooks/routing.md' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF "does not require a second provider" \
   "$repo_dir/shared/AGENTS.md"
-grep -qF "The helpers preflight authentication themselves" \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF "Silence while the process is alive is not a" \
-  "$repo_dir/shared/AGENTS.md"
+grep -qF "Helpers preflight authentication; do not duplicate checks." \
+  "$repo_dir/shared/playbooks/reviews.md"
+grep -qF "Claude output is buffered; poll the same live process" \
+  "$repo_dir/shared/playbooks/reviews.md"
 grep -qF "prevent nested delegation" "$repo_dir/shared/AGENTS.md"
 grep -qF "refresh-global-setup" "$repo_dir/shared/AGENTS.md"
 test "$(wc -c <"$repo_dir/shared/AGENTS.md")" -le 5000
@@ -134,9 +121,8 @@ grep -qF '| Complex or cross-cutting Claude-authored work | Sol at xhigh |' \
 grep -qF 'follow the implementation author, not the orchestrator' \
   "$repo_dir/shared/playbooks/reviews.md"
 grep -qF "shared/AGENTS.md" "$repo_dir/shared/playbooks/setup.md"
-grep -qF 'Luna (`gpt-5.6-luna`) at `low`' "$repo_dir/README.md"
-grep -qF 'Terra (`gpt-5.6-terra`) at `medium`' "$repo_dir/README.md"
-grep -qF 'Sol (`gpt-5.6-sol`) at `high`' "$repo_dir/README.md"
+grep -qF '(shared/playbooks/routing.md)' "$repo_dir/README.md"
+grep -qF '(shared/playbooks/reviews.md)' "$repo_dir/README.md"
 grep -qF "Astra owns Codex orchestration; Fable owns Claude orchestration." \
   "$repo_dir/README.md"
 grep -qF "shared/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"

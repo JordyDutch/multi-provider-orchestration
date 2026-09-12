@@ -14,7 +14,17 @@ fresh repository clone, root `AGENTS.md` tells both engines to read this file.
 - Match surrounding naming, style, comments, and idioms. Keep changes narrow and
   do not reformat unrelated code.
 - Verify before claiming completion. Run the affected tests, lint, build, or
-  flow and report failures or skipped checks honestly.
+  flow and all required checks; report failures or skipped checks honestly.
+  Once checks pass, repeat or broaden them only for new changes, failures, or
+  unresolved risk. Add tests when they protect meaningful behavior.
+- Complete the user's requested outcome. For implementation work, verify the
+  result and fix defects caused by the change. Stay within the authorized scope;
+  an analysis or review request does not authorize implementation. Continue until
+  completion or a concrete blocker requires user input.
+- Use reasonable assumptions for routine choices. Local edits, checks, and fixes
+  within scope use existing authorization, subject to Git discipline. Ask only
+  when missing information materially affects the result or an action exceeds
+  scope; continue independent authorized work while waiting.
 - Use full `https://...` URLs. Verify live sources before writing volatile facts
   such as model IDs, prices, dates, limits, or external endpoints.
 - Treat user data and credentials as out of scope for external hand-offs. Send
@@ -36,19 +46,13 @@ worker, reviewer, or model call merely because one is available.
 - For a substantial, risky, multi-provider, or multi-agent task, open the
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
-- In Codex-led work and hand-offs, use Luna (`gpt-5.6-luna`) at `low` for
-  repeatable extraction, classification, transformation, formatting, or
-  mechanical edits; `medium` for multi-item work. Use Terra (`gpt-5.6-terra`) at
-  `medium` for bounded analysis, implementation, or tests, and `high` for bounded
-  multi-file tradeoffs.
-- In Claude-led bounded mechanical work, keep the owner or use
-  live-verified Sonnet 5 at `low`/`medium` when worthwhile. Every owner verifies
-  hand-offs.
-- Astra (`gpt-6-astra`) owns Codex orchestration at `high`; use `xhigh` for
-  decisive hard stages. Sol (`gpt-5.6-sol`) handles complex execution and analysis
-  at `high`, and normal or complex Claude-code reviews at `xhigh`.
-  Fable 5.1 owns Claude-led orchestration and complex Claude tasks;
-  prefer Opus 5 for frontend/UX. Independent reviews choose their effort.
+- For the no-playbook route in Codex-led work, use Luna (`gpt-5.6-luna`) at `low`
+  for mechanical work or `medium` for multiple items; Terra (`gpt-5.6-terra`) at
+  `medium` when bounded judgement is needed. In Claude-led mechanical work, keep
+  the owner or use live-verified Sonnet 5 at `low`/`medium` when worthwhile.
+- Astra owns Codex orchestration; Fable owns Claude orchestration. Detailed
+  model roles, effort, and escalation live in `playbooks/routing.md` via the
+  router. Small scopes may stay with the active owner, who verifies hand-offs.
 - Pin Claude Opus to exact `claude-opus-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
 - Require an opposite-provider review for security, authentication,
@@ -56,14 +60,8 @@ worker, reviewer, or model call merely because one is available.
   architecture, unfamiliar behavioral changes, conflicting evidence, and hard
   diagnoses. A primary-source-backed factual lookup or deterministic change with
   decisive verification does not require a second provider.
-- Match owner and worker effort to risk. Reserve `xhigh`, `max`, extra reviewers,
-  and duplicate implementation for concrete complexity or consequence; review
-  routes choose effort separately by authorship and risk.
-- Run `claude-review`, `fable-review`, and Claude authentication checks in host
-  context. The helpers preflight authentication themselves, so do not run a
-  separate auth check unless a helper fails.
-- Claude review output is buffered. Silence while the process is alive is not a
-  hang; poll the existing process and never start a duplicate review.
+- Follow `playbooks/reviews.md` via the router for review selection and recovery.
+  Run Claude review helpers and authentication checks in host context.
 - Parallelize only independent meaningful workstreams. Give each worker a
   bounded scope, prevent nested delegation unless explicitly authorized, keep
   writes non-overlapping, and collect every result before completion.

@@ -11,7 +11,8 @@ integration.
 3. Prefer tests, a concrete diff, and primary sources over extra model sampling.
 4. Reuse one good repository map; do not ask multiple workers to rediscover it.
 5. Send compact hand-offs and return findings or patches, not transcripts.
-6. Stop when verification and the required independent review are decisive.
+6. Finish the requested outcome once verification and any required review are
+   decisive; a first implementation or a passing test alone may leave work open.
 
 ## Parallel work safety
 
@@ -45,19 +46,19 @@ integration.
 ### Normal behavioral work
 
 1. One owner scopes the behavior and verification using `routing.md`.
-2. The owner selects Sol, Terra, Luna, or a Claude specialist by task fit;
-   prefer Opus for frontend/UX. Tiny scopes may stay with the owner.
+2. Use a bounded specialist from `routing.md` when the hand-off is worthwhile.
+   Tiny scopes may stay with the owner.
 3. Run focused tests and inspect the integrated diff.
 4. Use one opposite-provider review when the risk triggers in `reviews.md` apply.
 5. Validate findings, fix confirmed defects, and rerun affected checks.
 
 ### Critical or hard work
 
-1. Astra owns Codex orchestration at high/xhigh; Fable owns Claude orchestration.
-2. Sol or Claude specialists handle complex execution and analysis; efficient
-   tiers handle explicit support work. Workers return decisions to the owner.
-3. Run focused and broader verification.
-4. The opposite provider reviews the changed risk boundary at the strongest
-   suitable tier.
+1. Select the owner and specialists using `routing.md`.
+2. Assign bounded execution and support scopes. Workers return decisions to
+   the owner.
+3. Verify the affected behavior and risk boundary, including broader checks
+   where the impact warrants them.
+4. Use `reviews.md` to select the opposite-provider review for that risk.
 5. The original owner reconciles findings and makes the evidence-based final
-   judgement. Use max only for the hardest unresolved question.
+   judgement and completes the remaining authorized work.
