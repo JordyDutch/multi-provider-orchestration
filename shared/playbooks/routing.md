@@ -53,7 +53,7 @@ Never use bare or `latest` aliases for pinned Opus and Fable routes.
 | --- | --- | --- |
 | Deterministic inventory, extraction, formatting, transformation, or mechanical edit | In Codex-led work, Luna low for one clear pass, Luna medium for several items or checks, or Terra medium when criteria require judgement; in Claude-led work, keep the active owner or use verified Sonnet low/medium when the hand-off is worthwhile | None when checks are decisive |
 | Normal scoped behavior change | Terra medium; Terra high for multiple files or real tradeoffs; Opus high when Claude is the better implementation fit; current entry owner integrates | Review provider follows the implementation author when behavior, unfamiliarity, or uncertainty warrants it; use `reviews.md` |
-| Substantial multi-file work | Astra/Fable owns by entry provider; Sol high or Claude specialists execute named scopes | One normal strong opposite-provider review |
+| Substantial multi-file work | Astra/Fable owns by entry provider; Sol high or Claude specialists execute named scopes | Apply the risk triggers in `reviews.md`; size alone does not require review |
 | Hardest cross-system work, hard diagnosis, or conflicting evidence | Astra/Fable owns at high; xhigh for the unresolved question, with Sol or Claude analysis as useful | Independent second opinion |
 | Security, auth, permissions, funds, destructive change, data loss, migration, costly architecture | Astra/Fable xhigh; max only for the hardest remaining judgement | Mandatory strongest suitable opposite-provider review |
 | Large task with truly independent workstreams | Astra/Fable owns; bounded workers, or ultra only when supported | Owner synthesis plus risk-appropriate review |

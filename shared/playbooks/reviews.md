@@ -12,8 +12,8 @@ architecture, unfamiliar behavioral changes, repeated failed diagnosis, or
 conflicting evidence.
 
 A second provider is normally unnecessary for deterministic changes with
-decisive tests or factual lookups directly supported by primary sources. Scale,
-ambiguity, weak verification, or meaningful behavioral impact can still make a
+decisive tests or factual lookups directly supported by primary sources.
+Ambiguity, weak verification, or broad behavioral impact can still make a
 review necessary. Do not use a vague `substantial` label as the only trigger.
 
 ## Review routes

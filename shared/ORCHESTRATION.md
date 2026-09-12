@@ -14,17 +14,9 @@ read every playbook by default.
 | Global installation, refresh, portability, or model availability | [`playbooks/setup.md`](playbooks/setup.md) | Fail-closed checks and byte-for-byte verification |
 | Parallel or multi-agent work | [`playbooks/execution.md`](playbooks/execution.md) | Only independent scopes, bounded fan-out, no unapproved nesting |
 
-## Non-negotiable routes
+## Canonical rules
 
-- Astra owns Codex orchestration; Fable 5.1 owns Claude orchestration. Sol handles
-  complex execution and regular complex reviews. Choose workers across providers
-  by task fit; small tasks do not require an extra orchestration call.
 - `playbooks/routing.md` is the canonical model and effort ladder; the active
   baseline summarizes the no-playbook deterministic route.
-- Every Opus route uses exact `claude-opus-5`; every Fable route uses exact
-  `claude-fable-5-1`. Never silently substitute an older model.
-- Consequential or uncertain work gets an independent opposite-provider review.
-  Deterministic or primary-source-backed work with decisive evidence may skip it.
-- Keep planning, integration, and final judgement with one owner. A specialist
-  hand-off does not transfer ownership.
-- Prefer verification and compact evidence over repeated model sampling.
+- `playbooks/reviews.md` determines when review is required and selects its
+  provider and effort. Task size alone does not require review.
