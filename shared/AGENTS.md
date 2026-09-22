@@ -47,7 +47,7 @@ worker, reviewer, or model call merely because one is available.
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
 - For the no-playbook route in Codex-led work, use Luna (`gpt-6-luna`) at `low`
-  for mechanical work or `medium` for multiple items; Terra (`gpt-5.6-terra`) at
+  for mechanical work or `medium` for multiple items; Sol (`gpt-6-sol`) at
   `medium` when bounded judgement is needed. In Claude-led mechanical work, keep
   the owner or use live-verified Sonnet 5 at `low`/`medium` when worthwhile.
 - Astra owns Codex orchestration; Fable owns Claude orchestration. Detailed

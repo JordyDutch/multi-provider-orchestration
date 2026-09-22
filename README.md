@@ -74,6 +74,9 @@ selects specialists across providers by task fit. The canonical
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
+Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
+complex implementation and Luna handling mechanical work.
+
 The [review guide](shared/playbooks/reviews.md) determines whether a review is
 needed and selects its provider and effort by authorship and risk. A change
 spanning many files does not require review solely because of its size.

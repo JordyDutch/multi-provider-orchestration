@@ -45,7 +45,7 @@ grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/shared/AGENTS.md"
 grep -qF 'Luna (`gpt-6-luna`) at `low`' \
   "$repo_dir/shared/AGENTS.md"
-grep -qF 'Terra (`gpt-5.6-terra`) at' \
+grep -qF 'Sol (`gpt-6-sol`) at' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/shared/AGENTS.md"
@@ -85,13 +85,11 @@ grep -qF '`playbooks/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/shared/ORCHESTRATION.md"
 grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF '| Codex complex specialist | GPT-6 Sol (`gpt-6-sol`) | `high` |' \
+grep -qF '| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `medium` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
-  "$repo_dir/shared/playbooks/routing.md"
-grep -qF '| Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/shared/playbooks/routing.md"
@@ -105,9 +103,9 @@ grep -qF "current entry owner integrates" \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF "Review provider follows the implementation author" \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF 'prefer Sol over compensating with `xhigh`' \
+grep -qF 'use Sol medium for bounded work or Sol high for ambiguous execution' \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF "Reclassify and promote the model when the task changes class" \
+grep -qF "integration decisions to the calling owner" \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF 'Review routes in `reviews.md` choose effort separately' \
   "$repo_dir/shared/playbooks/routing.md"
