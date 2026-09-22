@@ -39,7 +39,7 @@ grep -qF 'earlier higher-level instruction explicitly states' \
   "$repo_dir/AGENTS.md"
 grep -qF 'read `shared/AGENTS.md`' "$repo_dir/AGENTS.md"
 grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/shared/AGENTS.md"
-grep -qF 'exact `claude-opus-5`' "$repo_dir/shared/AGENTS.md"
+grep -qF 'exact `claude-opus-5-5`' "$repo_dir/shared/AGENTS.md"
 grep -qF '`claude-fable-5-1`' "$repo_dir/shared/AGENTS.md"
 grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/shared/AGENTS.md"
@@ -89,7 +89,7 @@ grep -qF '| Codex complex specialist | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF '| Claude coding/review | Opus 5 (`claude-opus-5`) | `high` |' \
+grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` |' \
   "$repo_dir/shared/playbooks/routing.md"
@@ -284,7 +284,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/opus.stdin" \
   "$fake_bin/claude-review" "Review only." >/dev/null
 
-grep -qxF "claude-opus-5" "$test_home/opus.args"
+grep -qxF "claude-opus-5-5" "$test_home/opus.args"
 grep -qxF "high" "$test_home/opus.args"
 grep -qF "smallest additional repository context needed" \
   "$test_home/opus.stdin"
@@ -419,20 +419,25 @@ if grep -qF "diff --git" "$test_home/audit.stdin"; then
   exit 1
 fi
 
-if PATH="$fake_bin:/usr/bin:/bin" \
-  HOME="$test_home" \
-  CLAUDE_REVIEW_MODEL=claude-opus-4-8 \
-  CAPTURE_ARGS="$test_home/old-opus.args" \
-  CAPTURE_STDIN="$test_home/old-opus.stdin" \
-  "$fake_bin/claude-review" "Review only." \
-  >"$test_home/old-opus.stdout" 2>"$test_home/old-opus.stderr"; then
-  printf '%s\n' "Expected an older Opus model ID to be rejected." >&2
-  exit 1
-fi
+for rejected_opus_model in claude-opus-4-8 claude-opus-5 opus claude-opus-5-5-latest; do
+  if PATH="$fake_bin:/usr/bin:/bin" \
+    HOME="$test_home" \
+    CLAUDE_REVIEW_MODEL="$rejected_opus_model" \
+    CAPTURE_ARGS="$test_home/old-opus.args" \
+    CAPTURE_STDIN="$test_home/old-opus.stdin" \
+    "$fake_bin/claude-review" "Review only." \
+    >"$test_home/old-opus.stdout" 2>"$test_home/old-opus.stderr"; then
+    printf 'Expected Opus model ID or alias to be rejected: %s\n' \
+      "$rejected_opus_model" >&2
+    exit 1
+  else
+    test "$?" -eq 64
+  fi
 
-grep -qF "model must be pinned to claude-opus-5 or claude-fable-5-1" \
-  "$test_home/old-opus.stderr"
-test ! -e "$test_home/old-opus.args"
+  grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
+    "$test_home/old-opus.stderr"
+  test ! -e "$test_home/old-opus.args"
+done
 
 if PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
@@ -445,7 +450,7 @@ if PATH="$fake_bin:/usr/bin:/bin" \
   exit 1
 fi
 
-grep -qF "model must be pinned to claude-opus-5 or claude-fable-5-1" \
+grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
   "$test_home/old-fable.stderr"
 test ! -e "$test_home/old-fable.args"
 
@@ -461,7 +466,7 @@ if PATH="$fake_bin:/usr/bin:/bin" \
   exit 1
 fi
 
-grep -qF "model must be pinned to claude-opus-5 or claude-fable-5-1" \
+grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
   "$test_home/fable-alias.stderr"
 test ! -e "$test_home/fable-alias.args"
 

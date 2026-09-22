@@ -7,7 +7,7 @@ case "$(basename "$0")" in
     default_model="claude-fable-5-1"
     ;;
   *)
-    default_model="claude-opus-5"
+    default_model="claude-opus-5-5"
     ;;
 esac
 
@@ -18,14 +18,14 @@ diff_path="${CLAUDE_REVIEW_DIFF_PATH:-}"
 max_diff_bytes="${CLAUDE_REVIEW_MAX_DIFF_BYTES:-200000}"
 
 case "$model" in
-  claude-opus-5)
+  claude-opus-5-5)
     default_effort="high"
     ;;
   claude-fable-5-1)
     default_effort="xhigh"
     ;;
   *)
-    echo "Claude review unavailable: model must be pinned to claude-opus-5 or claude-fable-5-1." >&2
+    echo "Claude review unavailable: model must be pinned to claude-opus-5-5 or claude-fable-5-1." >&2
     exit 64
     ;;
 esac

@@ -20,12 +20,12 @@ review necessary. Do not use a vague `substantial` label as the only trigger.
 
 | Authorship and risk | Reviewer |
 | --- | --- |
-| Normal bounded Codex-authored behavior | Opus 5 (`claude-opus-5`) at high |
+| Normal bounded Codex-authored behavior | Opus 5.5 (`claude-opus-5-5`) at high |
 | Complex or cross-cutting Codex-authored work | Fable 5.1 (`claude-fable-5-1`) at xhigh |
 | Normal bounded Claude-authored behavior | Sol at xhigh |
 | Complex or cross-cutting Claude-authored work | Sol at xhigh |
 | Exceptionally hard, unresolved, or critical Claude-authored work | Astra (`gpt-6-astra`) at xhigh; max only for the hardest unresolved judgement |
-| Critical Codex-authored work | Fable 5.1 at xhigh; add Opus 5 at high only when a second Claude perspective materially reduces risk |
+| Critical Codex-authored work | Fable 5.1 at xhigh; add Opus 5.5 at high only when a second Claude perspective materially reduces risk |
 
 These risk-based routes follow the implementation author, not the orchestrator.
 Under Astra, Claude-written code gets an independent Sol review; Codex-written
@@ -67,7 +67,7 @@ CLAUDE_REVIEW_DIFF_PATH=src/auth claude-review \
   "Review only the authentication changes."
 ```
 
-The wrapper rejects absolute paths and traversal. It pins Opus 5/high or
+The wrapper rejects absolute paths and traversal. It pins Opus 5.5/high or
 Fable 5.1/xhigh, allows only `Read`, `Grep`, `Glob`, disables unrelated MCP and
 slash-command context, and separates dynamic context from the cache prefix.
 Older CLIs retain allow/deny lists and report unsupported optimizations.
@@ -85,7 +85,7 @@ ASTRA_REVIEW_EFFORT=xhigh astra-review \
 ```
 
 Claude output is buffered; poll the same live process, never a duplicate. After
-a bounded timeout, terminate cleanly and retry Opus 5 once at medium with the exact diff
+a bounded timeout, terminate cleanly and retry Opus 5.5 once at medium with the exact diff
 and repository tools disabled. If that retry fails, use Fable 5.1 once and
 report the fallback; never substitute an older Opus model.
 

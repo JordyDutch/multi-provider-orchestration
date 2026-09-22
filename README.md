@@ -19,7 +19,7 @@ for people who clone the repository before installing it.
 | `shared/playbooks/` | On-demand routing, review, execution, and setup guidance. |
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
-| `scripts/claude-review.sh` | Focused read-only Opus 5 or Fable 5.1 review hand-off. |
+| `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
@@ -121,6 +121,12 @@ baseline. Migrate them to the small bootstrap layout when convenient; the global
 installer never rewrites arbitrary repositories.
 
 ## Focused reviews
+
+`claude-review` pins `claude-opus-5-5` at `high` effort. Older Opus IDs and
+unpinned aliases are rejected. `fable-review` keeps `claude-fable-5-1` at `xhigh`.
+The exact Opus ID follows [Anthropic's migration guide](https://platform.claude.com/docs/en/models/opus-5-5/migration-guide).
+Opus 5.5 requires Claude Code 2.1.280 or newer. Run `claude update` before using
+the helper if your CLI is older.
 
 A normal review fails closed only when its selected scope has no tracked or
 untracked changes:
