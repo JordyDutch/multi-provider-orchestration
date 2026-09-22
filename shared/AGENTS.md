@@ -53,7 +53,7 @@ worker, reviewer, or model call merely because one is available.
 - Astra owns Codex orchestration; Fable owns Claude orchestration. Detailed
   model roles, effort, and escalation live in `playbooks/routing.md` via the
   router. Small scopes may stay with the active owner, who verifies hand-offs.
-- Pin Claude Opus to exact `claude-opus-5` and Fable to exact
+- Pin Claude Opus to exact `claude-opus-5-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
 - Require an opposite-provider review for security, authentication,
   authorization, funds, destructive changes, data-loss risk, costly-to-reverse

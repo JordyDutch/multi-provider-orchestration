@@ -40,7 +40,7 @@ model. Use only efforts supported by the current client.
 | Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` | Scoped implementation, repository analysis, tests, and bounded support work |
 | Codex efficient | GPT-5.6 Luna (`gpt-5.6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
 | Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Claude-led orchestration, complex Claude implementation and analysis, and cross-cutting Codex-code reviews |
-| Claude coding/review | Opus 5 (`claude-opus-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
+| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` | Low-risk bulk reading and mechanical support after live verification |
 
 Efforts are workflow choices; use the lowest sufficient level.
