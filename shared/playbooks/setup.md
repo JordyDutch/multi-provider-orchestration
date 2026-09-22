@@ -71,9 +71,9 @@ for one session:
 codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
 ```
 
-Sol remains the complex execution and regular review specialist. Fable owns
+Sol handles bounded and complex execution and regular reviews. Fable owns
 Claude-led sessions; use Opus for frontend/UX or implementation by fit, verified
-Sonnet for mechanical Claude work, and Terra/Luna for bounded Codex work.
+Sonnet for mechanical Claude work, and Luna for mechanical Codex work.
 
 The installer adds `astra-review` alongside `sol-review`; it does not change
 `config.toml`, existing tasks, or other machines. The model picker or explicit
