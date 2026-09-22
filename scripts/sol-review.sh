@@ -19,13 +19,13 @@ case "$(basename "$0")" in
   sol-review|sol-review.sh)
     reviewer="Sol"
     env_prefix="SOL_REVIEW"
-    model="${SOL_REVIEW_MODEL:-gpt-5.6-sol}"
+    model="${SOL_REVIEW_MODEL:-gpt-6-sol}"
     effort="${SOL_REVIEW_EFFORT:-xhigh}"
     review_mode="${SOL_REVIEW_MODE:-review}"
     diff_path="${SOL_REVIEW_DIFF_PATH:-}"
     max_diff_bytes="${SOL_REVIEW_MAX_DIFF_BYTES:-200000}"
-    if [ "$model" != "gpt-5.6-sol" ]; then
-      echo "Sol review unavailable: model must be pinned to gpt-5.6-sol; use astra-review for Astra." >&2
+    if [ "$model" != "gpt-6-sol" ]; then
+      echo "Sol review unavailable: model must be pinned to gpt-6-sol; use astra-review for Astra." >&2
       exit 64
     fi
     ;;

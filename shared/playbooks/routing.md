@@ -12,9 +12,9 @@ codex debug models | jq -r '
   .models[]
   | select(
       .slug == "gpt-6-astra"
-      or .slug == "gpt-5.6-sol"
+      or .slug == "gpt-6-sol"
       or .slug == "gpt-5.6-terra"
-      or .slug == "gpt-5.6-luna"
+      or .slug == "gpt-6-luna"
     )
   | [
       .slug,
@@ -36,9 +36,9 @@ model. Use only efforts supported by the current client.
 | Role | Model | Starting effort | Use |
 | --- | --- | --- | --- |
 | Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` | Planning, task allocation, integration, and final judgement |
-| Codex complex specialist | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` | Complex execution, design analysis, diagnosis, and normal or complex Claude-code reviews |
+| Codex complex specialist | GPT-6 Sol (`gpt-6-sol`) | `high` | Complex execution, design analysis, diagnosis, and normal or complex Claude-code reviews |
 | Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` | Scoped implementation, repository analysis, tests, and bounded support work |
-| Codex efficient | GPT-5.6 Luna (`gpt-5.6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
+| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
 | Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Claude-led orchestration, complex Claude implementation and analysis, and cross-cutting Codex-code reviews |
 | Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` | Low-risk bulk reading and mechanical support after live verification |

@@ -43,7 +43,7 @@ grep -qF 'exact `claude-opus-5-5`' "$repo_dir/shared/AGENTS.md"
 grep -qF '`claude-fable-5-1`' "$repo_dir/shared/AGENTS.md"
 grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/shared/AGENTS.md"
-grep -qF 'Luna (`gpt-5.6-luna`) at `low`' \
+grep -qF 'Luna (`gpt-6-luna`) at `low`' \
   "$repo_dir/shared/AGENTS.md"
 grep -qF 'Terra (`gpt-5.6-terra`) at' \
   "$repo_dir/shared/AGENTS.md"
@@ -85,7 +85,7 @@ grep -qF '`playbooks/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/shared/ORCHESTRATION.md"
 grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF '| Codex complex specialist | GPT-5.6 Sol (`gpt-5.6-sol`) | `high` |' \
+grep -qF '| Codex complex specialist | GPT-6 Sol (`gpt-6-sol`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
@@ -93,7 +93,7 @@ grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Codex everyday | GPT-5.6 Terra (`gpt-5.6-terra`) | `medium` |' \
   "$repo_dir/shared/playbooks/routing.md"
-grep -qF '| Codex efficient | GPT-5.6 Luna (`gpt-5.6-luna`) | `low` |' \
+grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/shared/playbooks/routing.md"
 grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
   "$repo_dir/shared/playbooks/routing.md"
@@ -480,7 +480,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/sol.stdin" \
   "$repo_dir/scripts/sol-review.sh" "Review only." >/dev/null
 
-grep -qxF "gpt-5.6-sol" "$test_home/sol.args"
+grep -qxF "gpt-6-sol" "$test_home/sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/sol.args"
 grep -qxF "read-only" "$test_home/sol.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/sol.stdin"
@@ -489,15 +489,15 @@ grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
 
 # The installed Sol entry point keeps its exact model even with Astra settings.
 PATH="$fake_bin:/usr/bin:/bin" \
-  SOL_REVIEW_MODEL=gpt-5.6-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
+  SOL_REVIEW_MODEL=gpt-6-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
   CAPTURE_ARGS="$test_home/installed-sol.args" \
   CAPTURE_STDIN="$test_home/installed-sol.stdin" \
   "$test_home/.local/bin/sol-review" "Review only." >/dev/null
-grep -qxF "gpt-5.6-sol" "$test_home/installed-sol.args"
+grep -qxF "gpt-6-sol" "$test_home/installed-sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
 grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
 
-for invalid_model in gpt-6-astra gpt-5.6-terra sol unavailable; do
+for invalid_model in gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavailable; do
   if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
     CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
@@ -506,7 +506,7 @@ for invalid_model in gpt-6-astra gpt-5.6-terra sol unavailable; do
     printf 'Expected Sol model override to fail closed: %s\n' "$invalid_model" >&2
     exit 1
   fi
-  grep -qF "model must be pinned to gpt-5.6-sol" "$test_home/sol-invalid-model.stderr"
+  grep -qF "model must be pinned to gpt-6-sol" "$test_home/sol-invalid-model.stderr"
   test ! -e "$test_home/sol-invalid-model.args"
 done
 
@@ -702,7 +702,7 @@ fi
 rm unrelated-astra.txt
 
 for invalid_setting in \
-  ASTRA_REVIEW_MODEL=gpt-5.6-sol \
+  ASTRA_REVIEW_MODEL=gpt-6-sol \
   ASTRA_REVIEW_MODEL=astra \
   ASTRA_REVIEW_EFFORT=ultra \
   ASTRA_REVIEW_EFFORT=invalid \
@@ -750,6 +750,16 @@ for invalid_effort in ultra invalid; do
 done
 
 # An unavailable model must preserve the failure, with no hidden fallback call.
+sol_status=0
+PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
+  CAPTURE_CALLS="$test_home/sol-failure.calls" \
+  CAPTURE_ARGS="$test_home/sol-failure.args" \
+  CAPTURE_STDIN="$test_home/sol-failure.stdin" \
+  "$test_home/.local/bin/sol-review" "Review only." >/dev/null || sol_status=$?
+test "$sol_status" -eq 42
+test "$(wc -l <"$test_home/sol-failure.calls")" -eq 1
+grep -qxF "gpt-6-sol" "$test_home/sol-failure.args"
+
 astra_status=0
 PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
   CAPTURE_CALLS="$test_home/astra-failure.calls" \

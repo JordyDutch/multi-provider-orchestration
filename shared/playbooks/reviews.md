@@ -91,7 +91,7 @@ report the fallback; never substitute an older Opus model.
 
 ## Codex helpers from Claude
 
-`sol-review` pins `gpt-5.6-sol` at xhigh; `astra-review` pins `gpt-6-astra`
+`sol-review` pins `gpt-6-sol` at xhigh; `astra-review` pins `gpt-6-astra`
 at high (request xhigh for an exceptional review). Both use ephemeral read-only
 sessions and keep the calling orchestrator as owner, including Astra when
 reviewing Claude contributions. The shared script dispatches by executable name.

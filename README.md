@@ -168,8 +168,8 @@ Prefer a path scope; raise
 at high and reads only `ASTRA_REVIEW_*` settings; it never automatically falls
 back to Sol. Use `ASTRA_REVIEW_EFFORT=xhigh` for critical Claude-authored work,
 or `max` only for the hardest unresolved judgement. `sol-review` pins
-`gpt-5.6-sol` at xhigh for normal and complex Claude-code reviews. It reads only
-`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-5.6-sol` when set. To request
+`gpt-6-sol` at xhigh for normal and complex Claude-code reviews. It reads only
+`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-6-sol` when set. To request
 Astra, call `astra-review` explicitly; a Sol model override can no longer select
 another model. Both helpers retain the calling orchestrator as owner.
 Both Codex routes reject unknown executable names and efforts outside
