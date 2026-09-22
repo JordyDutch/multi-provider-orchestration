@@ -77,6 +77,12 @@ only the defaults needed for small tasks that do not load a playbook.
 Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
 complex implementation and Luna handling mechanical work.
 
+Before using a Codex route, check the selected model and effort with
+`codex debug models` as shown in the routing guide. The bundled catalog can lag
+new releases, even on a current CLI. If a route is missing, update Codex and
+recheck the refreshed catalog; stop that route if it remains unavailable.
+Installing the instructions does not establish model access.
+
 The [review guide](shared/playbooks/reviews.md) determines whether a review is
 needed and selects its provider and effort by authorship and risk. A change
 spanning many files does not require review solely because of its size.
@@ -177,6 +183,11 @@ Astra, call `astra-review` explicitly; a Sol model override can no longer select
 another model. Both helpers retain the calling orchestrator as owner.
 Both Codex routes reject unknown executable names and efforts outside
 low/medium/high/xhigh/max; `ultra` is not allowed in review hand-offs.
+
+`sol-review` and `astra-review` require `jq` and a Codex CLI supporting
+`codex debug models`. Before inference, they check that command's catalog for
+their exact model and requested effort. An unreadable catalog or missing support
+stops the review with an update/recheck message, without a fallback model call.
 
 Run Claude helpers outside the Codex filesystem/process sandbox. They preflight
 authentication themselves, so a separate `claude auth status` immediately before

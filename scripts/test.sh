@@ -183,6 +183,19 @@ grep -qF "has uncommitted changes" "$test_home/dirty-refresh.stderr"
 
 mkdir -p "$fake_bin"
 
+jq_bin="$(command -v jq 2>/dev/null || true)"
+if [ -z "$jq_bin" ]; then
+  printf '%s\n' "Install jq to run the Codex catalog checks." >&2
+  exit 1
+fi
+ln -s "$jq_bin" "$fake_bin/jq"
+FAKE_CODEX_CATALOG="$test_home/models.json"
+export FAKE_CODEX_CATALOG
+jq -n '{models: ["gpt-6-sol", "gpt-6-astra"] | map({
+  slug: ., supported_reasoning_levels:
+    ["low", "medium", "high", "xhigh", "max"] | map({effort: .})
+})}' >"$FAKE_CODEX_CATALOG"
+
 printf '%s\n' \
   '#!/bin/sh' \
   'if [ "$1" = "--help" ]; then' \
@@ -204,6 +217,11 @@ printf '%s\n' \
   '#!/bin/sh' \
   'if [ "$1" = "login" ] && [ "$2" = "status" ]; then' \
   '  exit 0' \
+  'fi' \
+  'if [ "$1" = "debug" ] && [ "$2" = "models" ]; then' \
+  '  test "$#" -eq 2 || exit 64' \
+  '  cat "$FAKE_CODEX_CATALOG"' \
+  '  exit "${FAKE_CODEX_CATALOG_STATUS:-0}"' \
   'fi' \
   'printf "%s\n" "$@" >"$CAPTURE_ARGS"' \
   'cat >"$CAPTURE_STDIN"' \
@@ -506,6 +524,33 @@ for invalid_model in gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavai
   fi
   grep -qF "model must be pinned to gpt-6-sol" "$test_home/sol-invalid-model.stderr"
   test ! -e "$test_home/sol-invalid-model.args"
+done
+
+# Old, malformed, failed, or effort-incompatible catalogs must prevent inference.
+printf '%s\n' '{"models":[{"slug":"gpt-5.6-sol"}]}' >"$test_home/old-models.json"
+printf '%s\n' 'not-json' >"$test_home/invalid-models.json"
+jq '.models[].supported_reasoning_levels = [{effort: "low"}]' \
+  "$FAKE_CODEX_CATALOG" >"$test_home/low-only-models.json"
+for helper in sol-review astra-review; do
+  for catalog_case in old invalid low-only failed; do
+    catalog_path="$test_home/$catalog_case-models.json"
+    catalog_status=0
+    if [ "$catalog_case" = failed ]; then
+      catalog_path="$FAKE_CODEX_CATALOG"
+      catalog_status=1
+    fi
+    review_status=0
+    PATH="$fake_bin:/usr/bin:/bin" \
+      FAKE_CODEX_CATALOG="$catalog_path" \
+      FAKE_CODEX_CATALOG_STATUS="$catalog_status" \
+      CAPTURE_ARGS="$test_home/catalog-$helper-$catalog_case.args" \
+      CAPTURE_STDIN="$test_home/catalog-$helper-$catalog_case.stdin" \
+      "$test_home/.local/bin/$helper" "Review only." \
+      >"$test_home/catalog.stdout" 2>"$test_home/catalog.stderr" || review_status=$?
+    test "$review_status" -eq 6
+    grep -qF "review unavailable:" "$test_home/catalog.stderr"
+    test ! -e "$test_home/catalog-$helper-$catalog_case.args"
+  done
 done
 
 if PATH="$fake_bin:/usr/bin:/bin" \

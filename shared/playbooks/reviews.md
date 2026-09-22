@@ -99,6 +99,9 @@ Each reads only its matching `SOL_REVIEW_*` or `ASTRA_REVIEW_*` settings; model
 overrides must match that helper's exact model. Failure never triggers fallback.
 Unknown names and efforts outside low/medium/high/xhigh/max fail closed.
 
+Requires `jq`; helpers check the refreshed catalog for the model and effort
+before calling Codex. Missing support fails closed.
+
 ```sh
 sol-review "Review the current change for concrete defects and missing tests."
 SOL_REVIEW_MODE=audit sol-review "Audit only the named repository paths."

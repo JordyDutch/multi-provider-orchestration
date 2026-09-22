@@ -4,8 +4,8 @@ Read this guide when selecting models, effort, or the owning orchestrator.
 
 ## Availability
 
-Verify availability before changing routes or after a provider failure.
-Helpers preflight authentication; do not duplicate their checks.
+Check the refreshed catalog before the first Codex hand-off, route changes, or
+retries. Helpers check model, effort, and authentication; do not duplicate checks.
 
 ```sh
 codex debug models | jq -r '
@@ -24,8 +24,9 @@ codex debug models | jq -r '
 '
 ```
 
-Never load raw catalog output into model context. Catalog presence and login do
-not prove entitlement; confirm access with the first meaningful routed task.
+Bundled catalogs can lag. If the model or effort is absent, update Codex and
+recheck; stop that route if still absent. Keep raw catalogs out of model context.
+Catalog presence does not prove entitlement; confirm access on the first task.
 If Astra cannot own the task, report it and fall back once to Sol high/xhigh only
 when adequate; otherwise stop the affected scope. Never silently substitute a
 model. Use only efforts supported by the current client.

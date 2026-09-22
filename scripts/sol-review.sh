@@ -146,6 +146,26 @@ if [ "$evidence_bytes" -gt "$max_diff_bytes" ]; then
   exit 5
 fi
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "$reviewer review unavailable: install jq to validate the Codex model catalog." >&2
+  exit 127
+fi
+
+if ! "$codex_bin" debug models >"$review_tmp_dir/models.json" 2>"$review_tmp_dir/models.stderr"; then
+  echo "$reviewer review unavailable: cannot read the Codex model catalog. Update Codex and retry codex debug models." >&2
+  exit 6
+fi
+
+if ! jq -e --arg model "$model" --arg effort "$effort" '
+  any(.models[];
+    .slug == $model
+    and any(.supported_reasoning_levels[]; .effort == $effort)
+  )
+' "$review_tmp_dir/models.json" >/dev/null 2>&1; then
+  echo "$reviewer review unavailable: the Codex catalog does not confirm $model at $effort effort. Update Codex and recheck availability; no fallback was attempted." >&2
+  exit 6
+fi
+
 echo "Running read-only $reviewer review with $model at $effort effort..." >&2
 
 {
