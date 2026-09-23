@@ -1,7 +1,7 @@
 # Claude Code instructions
 
 `AGENTS.md` is the repository bootstrap shared with Codex. It loads the portable
-baseline from `shared/` only when the globally installed baseline marker is not
+baseline from `.agents/` only when the globally installed baseline marker is not
 already present. Detailed guidance is routed on demand.
 
 @AGENTS.md

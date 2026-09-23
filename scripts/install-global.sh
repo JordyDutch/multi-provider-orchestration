@@ -4,11 +4,11 @@ set -eu
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repo_dir="$(dirname "$script_dir")"
-shared_dir="$repo_dir/shared"
+agents_dir="$repo_dir/.agents"
 codex_dir="$HOME/.codex"
 claude_dir="$HOME/.claude"
 local_bin_dir="$HOME/.local/bin"
-installed_playbooks_dir="$codex_dir/playbooks"
+installed_rules_dir="$codex_dir/rules"
 claude_rules="$claude_dir/CLAUDE.md"
 shared_import='@~/.codex/AGENTS.md'
 
@@ -36,23 +36,23 @@ verify_copy() {
 
 mkdir -p \
   "$codex_dir" \
-  "$installed_playbooks_dir" \
+  "$installed_rules_dir" \
   "$claude_dir" \
   "$local_bin_dir"
 
-backup_if_different "$shared_dir/AGENTS.md" "$codex_dir/AGENTS.md"
+backup_if_different "$agents_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 backup_if_different \
-  "$shared_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
-for source_playbook in "$shared_dir"/playbooks/*.md; do
-  test -f "$source_playbook" || {
-    printf 'No shared playbooks found under %s\n' \
-      "$shared_dir/playbooks" >&2
+  "$agents_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
+for source_rule in "$agents_dir"/rules/*.md; do
+  test -f "$source_rule" || {
+    printf 'No portable rules found under %s\n' \
+      "$agents_dir/rules" >&2
     exit 3
   }
-  playbook="$(basename "$source_playbook")"
+  rule="$(basename "$source_rule")"
   backup_if_different \
-    "$source_playbook" \
-    "$installed_playbooks_dir/$playbook"
+    "$source_rule" \
+    "$installed_rules_dir/$rule"
 done
 backup_if_different \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
@@ -66,14 +66,14 @@ backup_if_different \
   "$repo_dir/scripts/refresh-global-setup.sh" \
   "$local_bin_dir/refresh-global-setup"
 
-install -m 644 "$shared_dir/AGENTS.md" "$codex_dir/AGENTS.md"
+install -m 644 "$agents_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 install -m 644 \
-  "$shared_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
-for source_playbook in "$shared_dir"/playbooks/*.md; do
-  playbook="$(basename "$source_playbook")"
+  "$agents_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
+for source_rule in "$agents_dir"/rules/*.md; do
+  rule="$(basename "$source_rule")"
   install -m 644 \
-    "$source_playbook" \
-    "$installed_playbooks_dir/$playbook"
+    "$source_rule" \
+    "$installed_rules_dir/$rule"
 done
 install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/claude-review"
@@ -91,14 +91,14 @@ if ! grep -qxF "$shared_import" "$claude_rules"; then
   printf '\n%s\n' "$shared_import" >>"$claude_rules"
 fi
 
-verify_copy "$shared_dir/AGENTS.md" "$codex_dir/AGENTS.md"
+verify_copy "$agents_dir/AGENTS.md" "$codex_dir/AGENTS.md"
 verify_copy \
-  "$shared_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
-for source_playbook in "$shared_dir"/playbooks/*.md; do
-  playbook="$(basename "$source_playbook")"
+  "$agents_dir/ORCHESTRATION.md" "$codex_dir/ORCHESTRATION.md"
+for source_rule in "$agents_dir"/rules/*.md; do
+  rule="$(basename "$source_rule")"
   verify_copy \
-    "$source_playbook" \
-    "$installed_playbooks_dir/$playbook"
+    "$source_rule" \
+    "$installed_rules_dir/$rule"
 done
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
@@ -115,7 +115,7 @@ printf '%s\n' \
   "Installed the shared Codex and Claude baseline:" \
   "  $codex_dir/AGENTS.md" \
   "  $codex_dir/ORCHESTRATION.md" \
-  "  $installed_playbooks_dir/*.md" \
+  "  $installed_rules_dir/*.md" \
   "  $local_bin_dir/claude-review" \
   "  $local_bin_dir/fable-review" \
   "  $local_bin_dir/sol-review" \

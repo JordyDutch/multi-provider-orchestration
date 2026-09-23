@@ -26,8 +26,8 @@ sh -n "$repo_dir/scripts/refresh-global-setup.sh"
 git -C "$repo_dir" diff --check
 test "$(wc -l <"$repo_dir/AGENTS.md")" -le 30
 test "$(wc -c <"$repo_dir/AGENTS.md")" -le 1500
-test ! "$repo_dir/AGENTS.md" -ef "$repo_dir/shared/AGENTS.md"
-if cmp -s "$repo_dir/AGENTS.md" "$repo_dir/shared/AGENTS.md"; then
+test ! "$repo_dir/AGENTS.md" -ef "$repo_dir/.agents/AGENTS.md"
+if cmp -s "$repo_dir/AGENTS.md" "$repo_dir/.agents/AGENTS.md"; then
   printf '%s\n' "Root bootstrap must differ from the shared baseline." >&2
   exit 1
 fi
@@ -37,108 +37,142 @@ if grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/AGENTS.md"; then
 fi
 grep -qF 'earlier higher-level instruction explicitly states' \
   "$repo_dir/AGENTS.md"
-grep -qF 'read `shared/AGENTS.md`' "$repo_dir/AGENTS.md"
-grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/shared/AGENTS.md"
-grep -qF 'exact `claude-opus-5-5`' "$repo_dir/shared/AGENTS.md"
-grep -qF '`claude-fable-5-1`' "$repo_dir/shared/AGENTS.md"
+grep -qF 'read `.agents/AGENTS.md`' "$repo_dir/AGENTS.md"
+grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/.agents/AGENTS.md"
+grep -qF 'exact `claude-opus-5-5`' "$repo_dir/.agents/AGENTS.md"
+grep -qF '`claude-fable-5-1`' "$repo_dir/.agents/AGENTS.md"
 grep -qF "no-playbook route in Codex-led work" \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Luna (`gpt-6-luna`) at `low`' \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Sol (`gpt-6-sol`) at' \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
-  "$repo_dir/shared/AGENTS.md"
-grep -qF 'playbooks/routing.md' \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
+grep -qF 'rules/routing.md' \
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF "does not require a second provider" \
-  "$repo_dir/shared/AGENTS.md"
+  "$repo_dir/.agents/AGENTS.md"
 grep -qF "Helpers preflight authentication; do not duplicate checks." \
-  "$repo_dir/shared/playbooks/reviews.md"
+  "$repo_dir/.agents/rules/reviews.md"
 grep -qF "Claude output is buffered; poll the same live process" \
-  "$repo_dir/shared/playbooks/reviews.md"
-grep -qF "prevent nested delegation" "$repo_dir/shared/AGENTS.md"
-grep -qF "refresh-global-setup" "$repo_dir/shared/AGENTS.md"
-test "$(wc -c <"$repo_dir/shared/AGENTS.md")" -le 5000
-test "$(wc -c <"$repo_dir/shared/ORCHESTRATION.md")" -le 2500
+  "$repo_dir/.agents/rules/reviews.md"
+grep -qF "prevent nested delegation" "$repo_dir/.agents/AGENTS.md"
+grep -qF "refresh-global-setup" "$repo_dir/.agents/AGENTS.md"
+test "$(wc -c <"$repo_dir/.agents/AGENTS.md")" -le 5000
+test "$(wc -c <"$repo_dir/.agents/ORCHESTRATION.md")" -le 2500
 
-for source_playbook in "$repo_dir"/shared/playbooks/*.md; do
-  test -f "$source_playbook"
-  playbook="$(basename "$source_playbook")"
-  test "$(wc -c <"$source_playbook")" -le 6000
-  grep -qF "playbooks/$playbook" "$repo_dir/shared/ORCHESTRATION.md"
+for source_rule in "$repo_dir"/.agents/rules/*.md; do
+  test -f "$source_rule"
+  rule="$(basename "$source_rule")"
+  test "$(wc -c <"$source_rule")" -le 6000
+  grep -qF "rules/$rule" "$repo_dir/.agents/ORCHESTRATION.md"
 done
 
-router_links="$(sed -nE 's/.*\((playbooks\/[^)]*\.md)\).*/\1/p' \
-  "$repo_dir/shared/ORCHESTRATION.md")"
+router_links="$(awk '
+  {
+    while (match($0, /\]\(rules\/[^)]*\.md\)/)) {
+      print substr($0, RSTART + 2, RLENGTH - 3)
+      $0 = substr($0, RSTART + RLENGTH)
+    }
+  }
+' "$repo_dir/.agents/ORCHESTRATION.md")"
+test -n "$router_links"
 for router_link in $router_links; do
-  test -f "$repo_dir/shared/$router_link"
+  test -f "$repo_dir/.agents/$router_link"
 done
 
 grep -qF "read every playbook by default" \
-  "$repo_dir/shared/ORCHESTRATION.md"
+  "$repo_dir/.agents/ORCHESTRATION.md"
 grep -qF "focused verification; no automatic review" \
-  "$repo_dir/shared/ORCHESTRATION.md"
-grep -qF '`playbooks/routing.md` is the canonical model and effort ladder' \
-  "$repo_dir/shared/ORCHESTRATION.md"
+  "$repo_dir/.agents/ORCHESTRATION.md"
+grep -qF '`rules/routing.md` is the canonical model and effort ladder' \
+  "$repo_dir/.agents/ORCHESTRATION.md"
 grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `medium` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "in Claude-led work, keep the active owner or use verified Sonnet" \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "Claude is not limited to reviewing Codex. A hand-off never transfers ownership." \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "current entry owner integrates" \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "Review provider follows the implementation author" \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF 'use Sol medium for bounded work or Sol high for ambiguous execution' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "integration decisions to the calling owner" \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF 'Review routes in `reviews.md` choose effort separately' \
-  "$repo_dir/shared/playbooks/routing.md"
+  "$repo_dir/.agents/rules/routing.md"
 grep -qF "One owner scopes the behavior and verification" \
-  "$repo_dir/shared/playbooks/execution.md"
+  "$repo_dir/.agents/rules/execution.md"
 grep -qF "Never let two workers edit the same file concurrently" \
-  "$repo_dir/shared/playbooks/execution.md"
-grep -qF "risk-based routes" "$repo_dir/shared/playbooks/reviews.md"
+  "$repo_dir/.agents/rules/execution.md"
+grep -qF "risk-based routes" "$repo_dir/.agents/rules/reviews.md"
 grep -qF '| Complex or cross-cutting Claude-authored work | Sol at xhigh |' \
-  "$repo_dir/shared/playbooks/reviews.md"
+  "$repo_dir/.agents/rules/reviews.md"
 grep -qF 'follow the implementation author, not the orchestrator' \
-  "$repo_dir/shared/playbooks/reviews.md"
-grep -qF "shared/AGENTS.md" "$repo_dir/shared/playbooks/setup.md"
-grep -qF '(shared/playbooks/routing.md)' "$repo_dir/README.md"
-grep -qF '(shared/playbooks/reviews.md)' "$repo_dir/README.md"
+  "$repo_dir/.agents/rules/reviews.md"
+grep -qF ".agents/AGENTS.md" "$repo_dir/.agents/rules/setup.md"
+grep -qF '(.agents/rules/routing.md)' "$repo_dir/README.md"
+grep -qF '(.agents/rules/reviews.md)' "$repo_dir/README.md"
 grep -qF "Astra owns Codex orchestration; Fable owns Claude orchestration." \
   "$repo_dir/README.md"
-grep -qF "shared/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
+grep -qF ".agents/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
-mkdir -p "$test_home/.claude"
+mkdir -p "$test_home/.claude" "$test_home/.codex/playbooks" \
+  "$test_home/.codex/rules"
 printf '%s\n' "Keep this Claude-only instruction." >"$test_home/.claude/CLAUDE.md"
+# Exercise an upgrade as well as the second, idempotent install.
+printf '%s\n' 'Legacy baseline.' >"$test_home/.codex/AGENTS.md"
+printf '%s\n' 'Legacy router.' >"$test_home/.codex/ORCHESTRATION.md"
+printf '%s\n' 'Legacy routing.' >"$test_home/.codex/playbooks/routing.md"
+printf '%s\n' 'Previous routing.' >"$test_home/.codex/rules/routing.md"
+printf '%s\n' 'Keep local guidance.' >"$test_home/.codex/rules/local.md"
+printf '%s\n' 'prefix_rule(pattern=["example-command"], decision="prompt")' \
+  >"$test_home/original-default.rules"
+cp "$test_home/original-default.rules" "$test_home/.codex/rules/default.rules"
 HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
 HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
 
-cmp -s "$repo_dir/shared/AGENTS.md" "$test_home/.codex/AGENTS.md"
+# One backup per differing target, even after the repeated installation.
+set -- "$test_home/.codex/AGENTS.md.backup."*
+test "$#" -eq 1
+grep -qxF 'Legacy baseline.' "$1"
+set -- "$test_home/.codex/ORCHESTRATION.md.backup."*
+test "$#" -eq 1
+grep -qxF 'Legacy router.' "$1"
+set -- "$test_home/.codex/rules/routing.md.backup."*
+test "$#" -eq 1
+grep -qxF 'Previous routing.' "$1"
+grep -qxF 'Legacy routing.' "$test_home/.codex/playbooks/routing.md"
+grep -qxF 'Keep local guidance.' "$test_home/.codex/rules/local.md"
+cmp -s "$test_home/original-default.rules" "$test_home/.codex/rules/default.rules"
+for router_link in $router_links; do
+  test -f "$test_home/.codex/$router_link"
+done
+
+cmp -s "$repo_dir/.agents/AGENTS.md" "$test_home/.codex/AGENTS.md"
 cmp -s \
-  "$repo_dir/shared/ORCHESTRATION.md" \
+  "$repo_dir/.agents/ORCHESTRATION.md" \
   "$test_home/.codex/ORCHESTRATION.md"
-for source_playbook in "$repo_dir"/shared/playbooks/*.md; do
-  playbook="$(basename "$source_playbook")"
+for source_rule in "$repo_dir"/.agents/rules/*.md; do
+  rule="$(basename "$source_rule")"
   cmp -s \
-    "$source_playbook" \
-    "$test_home/.codex/playbooks/$playbook"
+    "$source_rule" \
+    "$test_home/.codex/rules/$rule"
 done
 cmp -s \
   "$repo_dir/scripts/claude-review.sh" \
@@ -161,6 +195,33 @@ test "$(grep -c -xF '@~/.codex/AGENTS.md' \
 grep -qF "Keep this Claude-only instruction." \
   "$test_home/.claude/CLAUDE.md"
 
+# A clean machine needs the same complete instruction tree as an upgrade.
+fresh_home="$test_home/fresh-home"
+HOME="$fresh_home" "$repo_dir/scripts/install-global.sh" >/dev/null
+cmp -s "$repo_dir/.agents/AGENTS.md" "$fresh_home/.codex/AGENTS.md"
+cmp -s "$repo_dir/.agents/ORCHESTRATION.md" \
+  "$fresh_home/.codex/ORCHESTRATION.md"
+for router_link in $router_links; do
+  cmp -s "$repo_dir/.agents/$router_link" "$fresh_home/.codex/$router_link"
+done
+test ! -e "$fresh_home/.codex/playbooks"
+
+# Vendor the hidden directory using the documented copy layout. Repeating the
+# copy must not nest another .agents directory inside the destination.
+vendor_repo="$test_home/vendor-repo"
+mkdir -p "$vendor_repo/.agents"
+cp "$repo_dir/AGENTS.md" "$repo_dir/CLAUDE.md" \
+  "$repo_dir/ORCHESTRATION.md" "$vendor_repo/"
+cp -R "$repo_dir/.agents/." "$vendor_repo/.agents/"
+cp -R "$repo_dir/.agents/." "$vendor_repo/.agents/"
+cmp -s "$repo_dir/.agents/AGENTS.md" "$vendor_repo/.agents/AGENTS.md"
+cmp -s "$repo_dir/.agents/ORCHESTRATION.md" \
+  "$vendor_repo/.agents/ORCHESTRATION.md"
+for router_link in $router_links; do
+  cmp -s "$repo_dir/.agents/$router_link" "$vendor_repo/.agents/$router_link"
+done
+test ! -e "$vendor_repo/.agents/.agents"
+
 mkdir -p "$test_home/refresh-state"
 printf '%s\n' '2099-01-01' >"$test_home/refresh-state/multi-provider-orchestration-refresh-date"
 CODEX_SETUP_REPO="$test_home/missing-setup" \
@@ -182,6 +243,11 @@ fi
 grep -qF "has uncommitted changes" "$test_home/dirty-refresh.stderr"
 
 mkdir -p "$fake_bin"
+
+# Keep using the working Git selected by the caller inside isolated PATHs.
+# On macOS /usr/bin/git can be an unusable Xcode license-gated shim.
+git_bin="$(command -v git)"
+ln -s "$git_bin" "$fake_bin/git"
 
 jq_bin="$(command -v jq 2>/dev/null || true)"
 if [ -z "$jq_bin" ]; then

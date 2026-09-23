@@ -14,14 +14,43 @@ for people who clone the repository before installing it.
 | `AGENTS.md` | Small clone bootstrap; tells an uninstalled agent where to find the portable baseline. |
 | `CLAUDE.md` | Thin Claude entry point that imports the bootstrap. |
 | `ORCHESTRATION.md` | Compatibility pointer for older links and copies. |
-| `shared/AGENTS.md` | Canonical portable baseline installed globally. |
-| `shared/ORCHESTRATION.md` | Short task router that selects only relevant playbooks. |
-| `shared/playbooks/` | On-demand routing, review, execution, and setup guidance. |
+| `.agents/AGENTS.md` | Canonical portable baseline installed globally. |
+| `.agents/ORCHESTRATION.md` | Short task router that selects only relevant playbooks. |
+| `.agents/rules/` | On-demand routing, review, execution, and setup guidance. |
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
 | `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
+
+### Discovery and provider-specific folders
+
+`.agents/` is the canonical source directory. The root `AGENTS.md` remains the
+entry point because Codex discovers instructions at the repository root and
+along the path to the working directory, not automatically inside `.agents/`.
+See [Codex instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md#how-codex-discovers-guidance).
+
+The files in `.agents/rules/` are explicitly selected by `ORCHESTRATION.md`.
+This is a repository convention for on-demand guidance, not a universal native
+rules loader. Installing them in `.claude/rules/` would load unscoped rules at
+startup and defeat that selective loading.
+See [Claude rules](https://code.claude.com/docs/en/memory#organize-rules-with-clauderules).
+
+Add other extension directories only when they contain a real extension:
+
+| Extension | Native location and format |
+| --- | --- |
+| Codex skills | `.agents/skills/<name>/SKILL.md`, with `name` and `description` frontmatter; user skills belong in `~/.agents/skills/`. |
+| Claude skills and prompt commands | `.claude/skills/<name>/SKILL.md`; `.claude/commands/*.md` remains supported for existing commands. |
+| Claude subagents | `.claude/agents/*.md`, with Claude-specific frontmatter. |
+| Claude rules | `.claude/rules/*.md` for instructions intended for Claude's native rule loading. |
+
+See [Codex skills](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills),
+[Claude skills](https://code.claude.com/docs/en/skills), and
+[Claude subagents](https://code.claude.com/docs/en/sub-agents).
+This repository currently ships instruction modules and executable shell
+helpers, with no skill or subagent definitions. Helpers stay in `scripts/`;
+renaming a shell script into `commands/` does not register a prompt command.
 
 ## Install globally
 
@@ -33,8 +62,8 @@ cd multi-provider-orchestration
 
 The installer:
 
-- copies `shared/AGENTS.md` to `~/.codex/AGENTS.md`;
-- copies the shared router and playbooks to `~/.codex`;
+- copies `.agents/AGENTS.md` to `~/.codex/AGENTS.md`;
+- copies the router to `~/.codex/ORCHESTRATION.md` and rules to `~/.codex/rules/`;
 - installs `claude-review`, `fable-review`, `sol-review`, `astra-review`, and
   `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
@@ -44,7 +73,7 @@ The installer:
 After installation, Codex loads the compact global baseline and then only the
 repository-specific root instructions. Claude loads the same global baseline
 through its import. The root bootstrap detects the marker already present in the
-instruction chain and does not ask either engine to read `shared/AGENTS.md`
+instruction chain and does not ask either engine to read `.agents/AGENTS.md`
 again.
 
 If the repository has just been cloned and is not installed yet, root
@@ -52,6 +81,17 @@ If the repository has just been cloned and is not installed yet, root
 That keeps the GitHub repository usable without a prior machine-level setup.
 
 If `~/.local/bin` is not on `PATH`, add it to the shell configuration.
+
+Upgrades install the new router and `.agents/rules/` content together. An older
+`~/.codex/playbooks/` directory is left intact for existing references; the new
+router uses `~/.codex/rules/`. Differing baseline, router, and rule files are
+backed up before replacement, and unrelated files are preserved.
+
+The installed `rules/*.md` files are instruction modules selected by our router.
+Codex also uses that directory for native command policies such as
+`default.rules`, which use the separate Starlark `.rules` format. The installer
+only copies the Markdown modules and preserves existing `.rules` files; it does
+not change command permissions. See [Codex command rules](https://learn.chatgpt.com/docs/agent-configuration/rules).
 
 ## Daily refresh
 
@@ -70,14 +110,14 @@ missing, or failing checkouts stop safely without overwriting user work.
 
 Astra owns Codex orchestration; Fable owns Claude orchestration. Either owner
 selects specialists across providers by task fit. The canonical
-[model routing guide](shared/playbooks/routing.md) contains model IDs, roles,
+[model routing guide](.agents/rules/routing.md) contains model IDs, roles,
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
 Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
 complex implementation and Luna handling mechanical work.
 
-The [review guide](shared/playbooks/reviews.md) determines whether a review is
+The [review guide](.agents/rules/reviews.md) determines whether a review is
 needed and selects its provider and effort by authorship and risk. A change
 spanning many files does not require review solely because of its size.
 
@@ -102,12 +142,13 @@ This layout follows the contextual guidance and completion principles in
 
 ## Vendor into one repository
 
-Copy the bootstrap plus the entire shared directory so the destination remains
+Copy the bootstrap plus the entire `.agents` directory so the destination remains
 self-contained:
 
 ```sh
 cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
-cp -R shared /path/to/repo/shared
+mkdir -p /path/to/repo/.agents
+cp -R .agents/. /path/to/repo/.agents/
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
@@ -184,7 +225,7 @@ the review is unnecessary. A sandbox-only `loggedIn: false` must be rechecked in
 host context before asking the user to sign in. Claude's final text is buffered;
 silence while its process lives is not a hang and must not trigger a duplicate.
 
-Use the [review guide](shared/playbooks/reviews.md) to decide when these helpers
+Use the [review guide](.agents/rules/reviews.md) to decide when these helpers
 are needed and which route fits the change. Helper availability alone does not
 require a review.
 

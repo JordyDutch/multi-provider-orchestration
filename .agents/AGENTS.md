@@ -51,7 +51,7 @@ worker, reviewer, or model call merely because one is available.
   `medium` when bounded judgement is needed. In Claude-led mechanical work, keep
   the owner or use live-verified Sonnet 5 at `low`/`medium` when worthwhile.
 - Astra owns Codex orchestration; Fable owns Claude orchestration. Detailed
-  model roles, effort, and escalation live in `playbooks/routing.md` via the
+  model roles, effort, and escalation live in `rules/routing.md` via the
   router. Small scopes may stay with the active owner, who verifies hand-offs.
 - Pin Claude Opus to exact `claude-opus-5-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
@@ -60,7 +60,7 @@ worker, reviewer, or model call merely because one is available.
   architecture, unfamiliar behavioral changes, conflicting evidence, and hard
   diagnoses. A primary-source-backed factual lookup or deterministic change with
   decisive verification does not require a second provider.
-- Follow `playbooks/reviews.md` via the router for review selection and recovery.
+- Follow `rules/reviews.md` via the router for review selection and recovery.
   Run Claude review helpers and authentication checks in host context.
 - Parallelize only independent meaningful workstreams. Give each worker a
   bounded scope, prevent nested delegation unless explicitly authorized, keep
