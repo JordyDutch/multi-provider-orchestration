@@ -11,15 +11,21 @@ From the cloned checkout, run:
 ./scripts/install-global.sh
 ```
 
-The installer copies the canonical baseline and router from `shared/` into
-`~/.codex`, copies `shared/playbooks/` into `~/.codex/playbooks/`, installs the
+The installer copies the canonical baseline and router from `.agents/` into
+`~/.codex`, copies `.agents/rules/` into `~/.codex/rules/`, installs the
 review and refresh helpers under `~/.local/bin`, and adds exactly one
 `@~/.codex/AGENTS.md` import to `~/.claude/CLAUDE.md`. It preserves existing
 Claude-only instructions, backs up differing installed files, and verifies all
 copies byte-for-byte.
 
+Older `~/.codex/playbooks/` files are preserved for existing references. The new
+router selects `~/.codex/rules/`; unrelated installed files remain untouched.
+These `*.md` instruction modules are distinct from Codex's native `*.rules`
+command policies in the same directory. Existing command policies, including
+`default.rules`, are preserved; installation does not change command permissions.
+
 The root `AGENTS.md` remains a small repository bootstrap. A fresh clone that has
-not been installed reads `shared/AGENTS.md`; an installed session already
+not been installed reads `.agents/AGENTS.md`; an installed session already
 contains its marker and does not reread it. This preserves clone portability
 without loading the full baseline twice.
 
@@ -40,11 +46,12 @@ never overwrite them automatically.
 ## Portable repository copy
 
 To vendor this setup without requiring a prior global install, copy the root
-bootstrap files, the complete `shared/` directory, and optional local helpers:
+bootstrap files, the complete `.agents/` directory, and optional local helpers:
 
 ```sh
 cp AGENTS.md CLAUDE.md ORCHESTRATION.md /path/to/repo/
-cp -R shared /path/to/repo/shared
+mkdir -p /path/to/repo/.agents
+cp -R .agents/. /path/to/repo/.agents/
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
