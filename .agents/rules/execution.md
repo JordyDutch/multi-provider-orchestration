@@ -9,8 +9,11 @@ integration.
 2. Use efficient tiers only for bounded support work with explicit success
    criteria.
 3. Prefer tests, a concrete diff, and primary sources over extra model sampling.
-4. Reuse one good repository map; do not ask multiple workers to rediscover it.
-5. Send compact hand-offs and return findings or patches, not transcripts.
+4. Check scope and worker suitability before a full repository survey. Give a
+   suitable worker the map it needs; do not solve its scope first.
+5. Send a fresh compact task brief instead of conversation history where the
+   API supports it. Return findings or patches with files, checks, blockers,
+   and decisions, not transcripts.
 6. Finish the requested outcome once verification and any required review are
    decisive; a first implementation or a passing test alone may leave work open.
 
@@ -23,6 +26,8 @@ integration.
 - Workers receive explicit ownership and a bounded return format. They do not
   spawn more workers unless the owner explicitly authorizes a bounded second
   level. Automatic `ultra` delegation is top-level only and never nested.
+- Return unexpected behavior, architecture, or security uncertainty to the
+  owner immediately; do not stretch a mechanical worker into judgement.
 - Read-only workers may share a worktree only when their commands cannot mutate
   the index, caches, generated files, ports, or databases.
 - Parallel writers use isolated worktrees or explicitly non-overlapping file
@@ -31,7 +36,8 @@ integration.
   mutable state. Collect every exit status and report failures or live processes
   before completion.
 - The entrypoint owner integrates overlapping ideas, resolves disagreements,
-  inspects the final diff, and runs final verification.
+  inspects the final diff, and runs final verification without repeating a
+  successful worker's implementation.
 
 ## Workflow shapes
 
