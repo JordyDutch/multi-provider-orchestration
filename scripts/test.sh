@@ -246,8 +246,11 @@ mkdir -p "$fake_bin"
 
 # Keep using the working Git selected by the caller inside isolated PATHs.
 # On macOS /usr/bin/git can be an unusable Xcode license-gated shim.
+# A wrapper, not a link: Git for Windows' ln -s copies git.exe, and the copy
+# cannot load its DLLs once /mingw64/bin is outside the isolated PATH.
 git_bin="$(command -v git)"
-ln -s "$git_bin" "$fake_bin/git"
+printf '#!/bin/sh\nexec '\''%s'\'' "$@"\n' "$git_bin" >"$fake_bin/git"
+chmod +x "$fake_bin/git"
 
 jq_bin="$(command -v jq 2>/dev/null || true)"
 if [ -z "$jq_bin" ]; then
