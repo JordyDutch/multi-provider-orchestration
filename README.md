@@ -117,13 +117,23 @@ only the defaults needed for small tasks that do not load a playbook.
 Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
 complex implementation and Luna handling mechanical work.
 
+Choose a specialist after a cheap scope check only with a known scope,
+sufficient capability, decisive checks, and expected net savings. Keep unclear
+work with the strong owner; use the owner or shell for tiny deterministic work.
+Set both the live-verified model and effort in the actual worker spawn, with
+fresh compact context where supported. Naming Sol or Luna
+in instructions does not change the runtime model. Consider Opus for
+frontend/UX before authoring and return unexpected behavioral or security
+questions to the owner. The owner integrates the result and final checks.
+
 The [review guide](.agents/rules/reviews.md) determines whether a review is
 needed and selects its provider and effort by authorship and risk. A change
 spanning many files does not require review solely because of its size.
 
 The installer adds instructions and helpers without changing `config.toml`,
 existing tasks, or remote hosts. Routing is instruction-guided; there is no
-automatic dispatcher.
+automatic dispatcher or guaranteed cost saving. A smaller model can still use
+more tokens if it receives excess context or causes repeated work.
 
 ## Task completion
 

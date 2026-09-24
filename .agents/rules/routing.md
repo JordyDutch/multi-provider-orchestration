@@ -24,11 +24,10 @@ codex debug models | jq -r '
 '
 ```
 
-Never load raw catalog output into model context. Catalog presence and login do
-not prove entitlement; confirm access with the first meaningful routed task.
-If Astra cannot own the task, report it and fall back once to Sol high/xhigh only
-when adequate; otherwise stop the affected scope. Never silently substitute a
-model. Use only efforts supported by the current client.
+Use compact catalog output. Catalog presence and login do not prove access;
+confirm it with the first meaningful routed task. If Astra cannot own it, report
+that and fall back once to Sol high/xhigh only when adequate; otherwise stop
+the affected scope. Never silently substitute models. Use supported effort only.
 
 ## Current roles
 
@@ -41,9 +40,8 @@ model. Use only efforts supported by the current client.
 | Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` | Low-risk bulk reading and mechanical support after live verification |
 
-Efforts are workflow choices; use the lowest sufficient level.
-
-Never use bare or `latest` aliases for pinned Opus and Fable routes.
+Use the lowest sufficient effort. Never use bare or `latest` aliases for
+pinned Opus and Fable routes.
 
 ## Choose by consequence
 
@@ -58,13 +56,19 @@ Never use bare or `latest` aliases for pinned Opus and Fable routes.
 
 `Bounded` means named scope, known success criteria and checks, and no unresolved
 architecture or integration. Promote ambiguous execution to Sol high or Fable
-high for analysis; the calling owner decides architecture and integrates.
+high for analysis; the owner decides architecture and integrates.
 
-Choose specialists across providers under either owner: prefer Opus for
-frontend/UX and substantive Claude implementation, Fable for complex Claude
-tasks, and verified Sonnet low/medium for useful mechanical Claude work.
+Delegate execution only with known scope, sufficient capability, decisive checks,
+and expected net savings; otherwise keep the strong owner. Mandatory reviews
+apply regardless of savings. Sol suits bounded implementation; Luna suits
+mechanical batches. Consider Opus for frontend/UX before authoring.
 Claude is not limited to reviewing Codex. A hand-off never transfers ownership.
-Do not add an orchestration call for a small task or rerun success at every tier.
+Use the owner or shell for tiny deterministic tasks.
+
+Set both model and effort in each worker launch after live verification. Use
+fresh compact context when supported; model names in instructions do not switch
+the runtime. If explicit routing is unavailable, report it and keep the scope
+with the owner. Never silently substitute or inherit the owner's effort.
 
 ## Effort
 
@@ -75,25 +79,21 @@ Do not add an orchestration call for a small task or rerun success at every tier
 - `high`: multi-file tradeoffs, complex execution, or orchestration by role.
 - `xhigh`: difficult diagnosis, security, or ambiguous design; use on the small
   decisive stage.
-- `max`: hardest remaining single-agent judgement, not a default.
-- `ultra`: top-level automatic multi-agent work only; never nest it.
+- `max`: hardest remaining single-agent judgement, never a default.
+- `ultra`: top-level multi-agent work only; never nest it.
 
 Review routes in `reviews.md` choose effort separately by authorship and risk.
 
-When a Luna task starts needing planning or behavioral judgement,
-use Sol medium for bounded work or Sol high for ambiguous execution. When a
-Sol task grows beyond the bounded definition, return architecture and
-integration decisions to the calling owner. Reclassify the task and choose
-effort by consequence; do not compensate with `xhigh` or `max` by default.
-The active owner can finish tiny scopes directly when a hand-off costs more.
-
-Return unresolved hard decisions to the calling owner in one compact hand-off.
-Ownership does not mean writing every patch: use Sol and other specialists for
-meaningful execution scopes.
+When Luna needs planning or behavioral judgement,
+use Sol medium for bounded work or Sol high for ambiguous execution.
+If Sol exceeds its scope, return architecture and
+integration decisions to the calling owner. Choose effort by consequence;
+do not compensate with `xhigh` or `max` by default.
 
 ## Live sources
 
 - OpenAI model guidance: `https://developers.openai.com/api/docs/guides/latest-model`
 - Codex models: `https://learn.chatgpt.com/docs/models`
 - Codex CLI commands: `https://learn.chatgpt.com/docs/developer-commands?surface=cli`
+- Codex subagents: `https://learn.chatgpt.com/docs/agent-configuration/subagents`
 - Claude pricing and models: `https://platform.claude.com/docs/en/about-claude/pricing`

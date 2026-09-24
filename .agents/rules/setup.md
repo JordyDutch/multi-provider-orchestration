@@ -84,5 +84,7 @@ Sonnet for mechanical Claude work, and Luna for mechanical Codex work.
 
 The installer adds `astra-review` alongside `sol-review`; it does not change
 `config.toml`, existing tasks, or other machines. The model picker or explicit
-CLI model selects the entry session; instructions guide specialist hand-offs,
-not automatic model switching. Small tasks need no extra orchestration call.
+CLI model selects the entry session. For a worker, select its live-verified
+model and effort in the actual spawn; instructions alone cannot switch models.
+There is no automatic dispatch or cost guarantee. Smaller models may use more
+tokens if context or repeated work grows; keep hand-offs compact.
