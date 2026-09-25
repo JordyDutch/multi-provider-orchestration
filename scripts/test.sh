@@ -10,6 +10,15 @@ repo_dir="$(dirname "$script_dir")"
 test_home="$(mktemp -d)"
 fake_bin="$test_home/fake-bin"
 
+# Restricted PATH for helper runs. Git for Windows installs git outside
+# /usr/bin, so keep the directory of the git in use reachable.
+system_path="/usr/bin:/bin"
+git_dir="$(dirname "$(command -v git)")"
+case ":$system_path:" in
+  *":$git_dir:"*) ;;
+  *) system_path="$system_path:$git_dir" ;;
+esac
+
 cleanup() {
   rm -r "$test_home"
 }
@@ -312,7 +321,7 @@ git -C "$review_repo" \
 printf '%s\n' "after" >"$review_repo/tracked.txt"
 cd "$review_repo"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/fable.args" \
   CAPTURE_STDIN="$test_home/fable.stdin" \
@@ -334,7 +343,7 @@ if grep -qF "=== unstaged diff ===" "$test_home/fable.stdin" || \
   exit 1
 fi
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MAX_DIFF_BYTES=1 \
   CAPTURE_ARGS="$test_home/oversized.args" \
@@ -349,7 +358,7 @@ grep -qF "above CLAUDE_REVIEW_MAX_DIFF_BYTES=1" \
   "$test_home/oversized.stderr"
 test ! -e "$test_home/oversized.args"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MODEL=claude-fable-5-1 \
   CAPTURE_ARGS="$test_home/fable-env.args" \
@@ -360,7 +369,7 @@ grep -qxF "claude-fable-5-1" "$test_home/fable-env.args"
 grep -qxF "xhigh" "$test_home/fable-env.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/fable-env.stdin"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/opus.args" \
   CAPTURE_STDIN="$test_home/opus.stdin" \
@@ -371,7 +380,7 @@ grep -qxF "high" "$test_home/opus.args"
 grep -qF "smallest additional repository context needed" \
   "$test_home/opus.stdin"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   FAKE_CLAUDE_HELP=none \
   CAPTURE_ARGS="$test_home/degraded-help.args" \
@@ -401,7 +410,7 @@ grep -qxF "WebFetch" "$test_home/degraded-help.args"
 
 printf '%s\n' "unrelated" >"$review_repo/unrelated.txt"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_DIFF_PATH=tracked.txt \
   CAPTURE_ARGS="$test_home/scoped.args" \
@@ -416,7 +425,7 @@ if grep -qF "unrelated.txt" "$test_home/scoped.stdin"; then
 fi
 rm -f "$review_repo/unrelated.txt"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_DIFF_PATH=../tracked.txt \
   CAPTURE_ARGS="$test_home/parent-path.args" \
@@ -431,7 +440,7 @@ grep -qF "must be a relative path without parent traversal" \
   "$test_home/parent-path.stderr"
 test ! -e "$test_home/parent-path.args"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_DIFF_PATH=/tmp/tracked.txt \
   CAPTURE_ARGS="$test_home/absolute-path.args" \
@@ -448,7 +457,7 @@ test ! -e "$test_home/absolute-path.args"
 
 git checkout -- tracked.txt
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/empty-diff.args" \
   CAPTURE_STDIN="$test_home/empty-diff.stdin" \
@@ -464,7 +473,7 @@ test ! -e "$test_home/empty-diff.args"
 
 printf '%s\n' "new" >"$review_repo/untracked.txt"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/untracked.args" \
   CAPTURE_STDIN="$test_home/untracked.stdin" \
@@ -472,7 +481,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
 
 grep -qF "?? untracked.txt" "$test_home/untracked.stdin"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MAX_DIFF_BYTES=1 \
   CAPTURE_ARGS="$test_home/status-cap-claude.args" \
@@ -488,7 +497,7 @@ grep -qF "above CLAUDE_REVIEW_MAX_DIFF_BYTES=1" \
 test ! -e "$test_home/status-cap-claude.args"
 rm -f "$review_repo/untracked.txt"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MODE=audit \
   CAPTURE_ARGS="$test_home/audit.args" \
@@ -502,7 +511,7 @@ if grep -qF "diff --git" "$test_home/audit.stdin"; then
 fi
 
 for rejected_opus_model in claude-opus-4-8 claude-opus-5 opus claude-opus-5-5-latest; do
-  if PATH="$fake_bin:/usr/bin:/bin" \
+  if PATH="$fake_bin:$system_path" \
     HOME="$test_home" \
     CLAUDE_REVIEW_MODEL="$rejected_opus_model" \
     CAPTURE_ARGS="$test_home/old-opus.args" \
@@ -521,7 +530,7 @@ for rejected_opus_model in claude-opus-4-8 claude-opus-5 opus claude-opus-5-5-la
   test ! -e "$test_home/old-opus.args"
 done
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MODEL=claude-fable-5 \
   CAPTURE_ARGS="$test_home/old-fable.args" \
@@ -536,7 +545,7 @@ grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
   "$test_home/old-fable.stderr"
 test ! -e "$test_home/old-fable.args"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_MODEL=fable \
   CAPTURE_ARGS="$test_home/fable-alias.args" \
@@ -554,7 +563,7 @@ test ! -e "$test_home/fable-alias.args"
 
 printf '%s\n' "after-sol" >"$review_repo/tracked.txt"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   ASTRA_REVIEW_MODEL=unavailable ASTRA_REVIEW_EFFORT=max ASTRA_REVIEW_MODE=invalid \
   ASTRA_REVIEW_DIFF_PATH=../private ASTRA_REVIEW_MAX_DIFF_BYTES=1 \
   HOME="$test_home" \
@@ -570,7 +579,7 @@ grep -qF "=== git diff HEAD ===" "$test_home/sol.stdin"
 grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
 
 # The installed Sol entry point keeps its exact model even with Astra settings.
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   SOL_REVIEW_MODEL=gpt-6-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
   CAPTURE_ARGS="$test_home/installed-sol.args" \
   CAPTURE_STDIN="$test_home/installed-sol.stdin" \
@@ -580,7 +589,7 @@ grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
 grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
 
 for invalid_model in gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavailable; do
-  if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
+  if PATH="$fake_bin:$system_path" SOL_REVIEW_MODEL="$invalid_model" \
     CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
     "$test_home/.local/bin/sol-review" "Review only." \
@@ -606,7 +615,7 @@ for helper in sol-review astra-review; do
       catalog_status=1
     fi
     review_status=0
-    PATH="$fake_bin:/usr/bin:/bin" \
+    PATH="$fake_bin:$system_path" \
       FAKE_CODEX_CATALOG="$catalog_path" \
       FAKE_CODEX_CATALOG_STATUS="$catalog_status" \
       CAPTURE_ARGS="$test_home/catalog-$helper-$catalog_case.args" \
@@ -619,7 +628,7 @@ for helper in sol-review astra-review; do
   done
 done
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_MAX_DIFF_BYTES=1 \
   CAPTURE_ARGS="$test_home/sol-oversized.args" \
@@ -635,7 +644,7 @@ grep -qF "above SOL_REVIEW_MAX_DIFF_BYTES=1" \
   "$test_home/sol-oversized.stderr"
 test ! -e "$test_home/sol-oversized.args"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_DIFF_PATH=tracked.txt \
   CAPTURE_ARGS="$test_home/sol-scoped.args" \
@@ -646,7 +655,7 @@ grep -qF "=== git diff HEAD -- tracked.txt ===" \
   "$test_home/sol-scoped.stdin"
 
 printf '%s\n' "unrelated-sol" >"$review_repo/unrelated-sol.txt"
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_DIFF_PATH=tracked.txt \
   CAPTURE_ARGS="$test_home/sol-private-scope.args" \
@@ -658,7 +667,7 @@ if grep -qF "unrelated-sol.txt" "$test_home/sol-private-scope.stdin"; then
 fi
 rm -f "$review_repo/unrelated-sol.txt"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_DIFF_PATH=../tracked.txt \
   CAPTURE_ARGS="$test_home/sol-parent.args" \
@@ -675,7 +684,7 @@ test ! -e "$test_home/sol-parent.args"
 
 git checkout -- tracked.txt
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/sol-empty.args" \
   CAPTURE_STDIN="$test_home/sol-empty.stdin" \
@@ -690,7 +699,7 @@ grep -qF "no tracked or untracked changes found" \
 test ! -e "$test_home/sol-empty.args"
 
 printf '%s\n' "status-only" >"$review_repo/sol-status-only.txt"
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_MAX_DIFF_BYTES=1 \
   CAPTURE_ARGS="$test_home/status-cap-sol.args" \
@@ -706,7 +715,7 @@ grep -qF "above SOL_REVIEW_MAX_DIFF_BYTES=1" \
 test ! -e "$test_home/status-cap-sol.args"
 rm -f "$review_repo/sol-status-only.txt"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_MODE=audit \
   CAPTURE_ARGS="$test_home/sol-audit.args" \
@@ -723,7 +732,7 @@ git -C "$unborn_repo" add first.txt
 printf '%s\n' "working-copy" >"$unborn_repo/first.txt"
 cd "$unborn_repo"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/unborn-claude.args" \
   CAPTURE_STDIN="$test_home/unborn-claude.stdin" \
@@ -736,7 +745,7 @@ grep -qF "diff --git a/first.txt b/first.txt" \
 grep -qF "+working-copy" "$test_home/unborn-claude.stdin"
 grep -qxF "+first" "$test_home/unborn-claude.stdin"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CAPTURE_ARGS="$test_home/unborn-sol.args" \
   CAPTURE_STDIN="$test_home/unborn-sol.stdin" \
@@ -749,7 +758,7 @@ grep -qF "diff --git a/first.txt b/first.txt" \
 grep -qF "+working-copy" "$test_home/unborn-sol.stdin"
 grep -qxF "+first" "$test_home/unborn-sol.stdin"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   CLAUDE_REVIEW_DIFF_PATH=missing.txt \
   CAPTURE_ARGS="$test_home/unborn-missing-claude.args" \
@@ -764,7 +773,7 @@ grep -qF "no tracked or untracked changes found" \
   "$test_home/unborn-missing-claude.stderr"
 test ! -e "$test_home/unborn-missing-claude.args"
 
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   HOME="$test_home" \
   SOL_REVIEW_DIFF_PATH=missing.txt \
   CAPTURE_ARGS="$test_home/unborn-missing-sol.args" \
@@ -783,7 +792,7 @@ test ! -e "$test_home/unborn-missing-sol.args"
 cd "$review_repo"
 printf '%s\n' "astra-change" >tracked.txt
 astra_helper="$test_home/.local/bin/astra-review"
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   SOL_REVIEW_MODEL=unavailable SOL_REVIEW_EFFORT=max SOL_REVIEW_MODE=invalid \
   SOL_REVIEW_DIFF_PATH=../private SOL_REVIEW_MAX_DIFF_BYTES=1 \
   CAPTURE_ARGS="$test_home/astra.args" \
@@ -797,7 +806,7 @@ grep -qF "The calling orchestrator retains final integration" "$test_home/astra.
 grep -qF "+astra-change" "$test_home/astra.stdin"
 
 printf '%s\n' "unrelated" >unrelated-astra.txt
-PATH="$fake_bin:/usr/bin:/bin" \
+PATH="$fake_bin:$system_path" \
   ASTRA_REVIEW_DIFF_PATH=tracked.txt ASTRA_REVIEW_EFFORT=xhigh \
   CAPTURE_ARGS="$test_home/astra-scoped.args" \
   CAPTURE_STDIN="$test_home/astra-scoped.stdin" \
@@ -820,7 +829,7 @@ for invalid_setting in \
   ASTRA_REVIEW_DIFF_PATH=/tmp/tracked.txt \
   ASTRA_REVIEW_MAX_DIFF_BYTES=0 \
   ASTRA_REVIEW_MAX_DIFF_BYTES=1; do
-  if env PATH="$fake_bin:/usr/bin:/bin" "$invalid_setting" \
+  if env PATH="$fake_bin:$system_path" "$invalid_setting" \
     CAPTURE_ARGS="$test_home/astra-invalid.args" \
     CAPTURE_STDIN="$test_home/astra-invalid.stdin" \
     "$astra_helper" "Review only." \
@@ -834,7 +843,7 @@ done
 
 # A renamed shared helper must not silently drop Astra's model or path scope.
 cp "$astra_helper" "$fake_bin/unknown-review"
-if PATH="$fake_bin:/usr/bin:/bin" ASTRA_REVIEW_DIFF_PATH=tracked.txt \
+if PATH="$fake_bin:$system_path" ASTRA_REVIEW_DIFF_PATH=tracked.txt \
   CAPTURE_ARGS="$test_home/unknown-review.args" \
   CAPTURE_STDIN="$test_home/unknown-review.stdin" \
   "$fake_bin/unknown-review" "Review only." \
@@ -846,7 +855,7 @@ grep -qF "invoke as sol-review or astra-review" "$test_home/unknown-review.stder
 test ! -e "$test_home/unknown-review.args"
 
 for invalid_effort in ultra invalid; do
-  if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_EFFORT="$invalid_effort" \
+  if PATH="$fake_bin:$system_path" SOL_REVIEW_EFFORT="$invalid_effort" \
     CAPTURE_ARGS="$test_home/sol-invalid-effort.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-effort.stdin" \
     "$test_home/.local/bin/sol-review" "Review only." \
@@ -860,7 +869,7 @@ done
 
 # An unavailable model must preserve the failure, with no hidden fallback call.
 sol_status=0
-PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
+PATH="$fake_bin:$system_path" FAKE_CODEX_STATUS=42 \
   CAPTURE_CALLS="$test_home/sol-failure.calls" \
   CAPTURE_ARGS="$test_home/sol-failure.args" \
   CAPTURE_STDIN="$test_home/sol-failure.stdin" \
@@ -870,7 +879,7 @@ test "$(wc -l <"$test_home/sol-failure.calls")" -eq 1
 grep -qxF "gpt-6-sol" "$test_home/sol-failure.args"
 
 astra_status=0
-PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
+PATH="$fake_bin:$system_path" FAKE_CODEX_STATUS=42 \
   CAPTURE_CALLS="$test_home/astra-failure.calls" \
   CAPTURE_ARGS="$test_home/astra-failure.args" \
   CAPTURE_STDIN="$test_home/astra-failure.stdin" \
@@ -880,7 +889,7 @@ test "$(wc -l <"$test_home/astra-failure.calls")" -eq 1
 grep -qxF "gpt-6-astra" "$test_home/astra-failure.args"
 
 git checkout -- tracked.txt
-if PATH="$fake_bin:/usr/bin:/bin" \
+if PATH="$fake_bin:$system_path" \
   CAPTURE_ARGS="$test_home/astra-empty.args" \
   CAPTURE_STDIN="$test_home/astra-empty.stdin" \
   "$astra_helper" "Review only." \
@@ -891,7 +900,7 @@ fi
 grep -qF "Set ASTRA_REVIEW_MODE=audit" "$test_home/astra-empty.stderr"
 test ! -e "$test_home/astra-empty.args"
 
-PATH="$fake_bin:/usr/bin:/bin" ASTRA_REVIEW_MODE=audit ASTRA_REVIEW_EFFORT=max \
+PATH="$fake_bin:$system_path" ASTRA_REVIEW_MODE=audit ASTRA_REVIEW_EFFORT=max \
   CAPTURE_ARGS="$test_home/astra-audit.args" \
   CAPTURE_STDIN="$test_home/astra-audit.stdin" \
   "$astra_helper" "Audit only." >/dev/null
