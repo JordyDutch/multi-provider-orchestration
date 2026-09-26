@@ -21,6 +21,8 @@ trap 'exit 143' TERM
 
 sh -n "$repo_dir/scripts/install-global.sh"
 sh -n "$repo_dir/scripts/claude-review.sh"
+sh -n "$repo_dir/scripts/claude-task.sh"
+sh -n "$repo_dir/scripts/test-claude-task.sh"
 sh -n "$repo_dir/scripts/sol-review.sh"
 sh -n "$repo_dir/scripts/refresh-global-setup.sh"
 git -C "$repo_dir" diff --check
@@ -49,7 +51,7 @@ grep -qF 'Sol (`gpt-6-sol`) at' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/.agents/AGENTS.md"
-grep -qF 'live-verified Sonnet 5 at `low`/`medium`' \
+grep -qF 'those specialists or live-verified Sonnet 5' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'rules/routing.md' \
   "$repo_dir/.agents/AGENTS.md"
@@ -92,7 +94,7 @@ grep -qF '`rules/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/.agents/ORCHESTRATION.md"
 grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `medium` |' \
+grep -qF '| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
@@ -102,7 +104,7 @@ grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF "in Claude-led work, keep the active owner or use verified Sonnet" \
+grep -qF "Either entry owner may choose by fit and savings" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF "Claude is not limited to reviewing Codex. A hand-off never transfers ownership." \
   "$repo_dir/.agents/rules/routing.md"
@@ -110,8 +112,12 @@ grep -qF "current entry owner integrates" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF "Review provider follows the implementation author" \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF 'use Sol medium for bounded work or Sol high for ambiguous execution' \
+grep -qF 'use Sol medium for bounded analysis or Sol high for implementation' \
   "$repo_dir/.agents/rules/routing.md"
+grep -qF 'codex exec --model gpt-6-sol' \
+  "$repo_dir/.agents/rules/delegation.md"
+grep -qF 'codex exec --model gpt-6-luna' \
+  "$repo_dir/.agents/rules/delegation.md"
 grep -qF "integration decisions to the calling owner" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF 'Review routes in `reviews.md` choose effort separately' \
@@ -128,7 +134,7 @@ grep -qF 'follow the implementation author, not the orchestrator' \
 grep -qF ".agents/AGENTS.md" "$repo_dir/.agents/rules/setup.md"
 grep -qF '(.agents/rules/routing.md)' "$repo_dir/README.md"
 grep -qF '(.agents/rules/reviews.md)' "$repo_dir/README.md"
-grep -qF "Astra owns Codex orchestration; Fable owns Claude orchestration." \
+grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Opus, and Fable." \
   "$repo_dir/README.md"
 grep -qF ".agents/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
@@ -180,6 +186,12 @@ cmp -s \
 cmp -s \
   "$repo_dir/scripts/claude-review.sh" \
   "$test_home/.local/bin/fable-review"
+for task_helper in opus-task fable-task; do
+  cmp -s \
+    "$repo_dir/scripts/claude-task.sh" \
+    "$test_home/.local/bin/$task_helper"
+  test -x "$test_home/.local/bin/$task_helper"
+done
 cmp -s \
   "$repo_dir/scripts/sol-review.sh" \
   "$test_home/.local/bin/sol-review"
@@ -201,6 +213,11 @@ HOME="$fresh_home" "$repo_dir/scripts/install-global.sh" >/dev/null
 cmp -s "$repo_dir/.agents/AGENTS.md" "$fresh_home/.codex/AGENTS.md"
 cmp -s "$repo_dir/.agents/ORCHESTRATION.md" \
   "$fresh_home/.codex/ORCHESTRATION.md"
+for task_helper in opus-task fable-task; do
+  cmp -s \
+    "$repo_dir/scripts/claude-task.sh" \
+    "$fresh_home/.local/bin/$task_helper"
+done
 for router_link in $router_links; do
   cmp -s "$repo_dir/.agents/$router_link" "$fresh_home/.codex/$router_link"
 done
@@ -897,5 +914,7 @@ PATH="$fake_bin:/usr/bin:/bin" ASTRA_REVIEW_MODE=audit ASTRA_REVIEW_EFFORT=max \
   "$astra_helper" "Audit only." >/dev/null
 grep -qxF 'model_reasoning_effort="max"' "$test_home/astra-audit.args"
 grep -qF "=== git diff HEAD ===" "$test_home/astra-audit.stdin"
+
+sh "$repo_dir/scripts/test-claude-task.sh"
 
 printf '%s\n' "All orchestration tests passed."

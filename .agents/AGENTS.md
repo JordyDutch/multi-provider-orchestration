@@ -38,21 +38,21 @@ Claude imports it. Root `AGENTS.md` loads it in a fresh clone.
 
 ## Model and tool orchestration
 
-Quality comes first. Delegate execution only with known scope, sufficient
-capability, decisive checks, and expected net savings. Keep unclear or tiny work
-with the owner. Mandatory reviews apply regardless of savings.
+Quality comes first. Delegate with known scope, capability, decisive checks,
+and expected net savings. Keep unclear or tiny work with the owner.
+Mandatory reviews apply regardless of savings.
 
 - For a substantial, risky, multi-provider, or multi-agent task, open the
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
 - For the no-playbook route in Codex-led work, use Luna (`gpt-6-luna`) at `low`
   for mechanical work or `medium` for multiple items; Sol (`gpt-6-sol`) at
-  `medium` when bounded judgement is needed. In Claude-led mechanical work, keep
-  the owner or use live-verified Sonnet 5 at `low`/`medium` when worthwhile.
-- Astra owns Codex orchestration; Fable owns Claude orchestration. When suitable,
-  use Sol for bounded implementation, Luna for mechanical batches, and consider
-  Opus for frontend/UX before authoring. Details live in `rules/routing.md`.
-  The owner integrates and verifies.
+  `medium` when bounded judgement is needed. In Claude-led work, Fable may use
+  those specialists or live-verified Sonnet 5 when a hand-off is worthwhile.
+- Astra owns Codex orchestration and delegates suitable scopes to Sol, Luna,
+  Opus, or Fable. Fable owns only direct Claude-led sessions. Use
+  `rules/routing.md` to choose and `rules/delegation.md` to launch workers.
+  The owner integrates and verifies; delegation never transfers ownership.
 - Pin Claude Opus to exact `claude-opus-5-5` and Fable to exact
   `claude-fable-5-1`. Never silently replace either with an older model.
 - Require an opposite-provider review for security, authentication,
@@ -69,10 +69,10 @@ with the owner. Mandatory reviews apply regardless of savings.
   effort in the actual hand-off; instructions alone do not switch models.
   Reuse a compact repo map and evidence; do not reimplement verified worker work.
 
-The user authorizes the smallest necessary current Git evidence and read-only
-repository context to the configured opposite provider for an independent
-review. This does not authorize secrets, personal data, unrelated files, writes,
-or broader external actions.
+Delegate only task-authorized repository work, including scoped local edits.
+Share minimal context, never secrets, personal data, or unrelated files.
+Opposite-provider reviews stay read-only. Delegation grants no extra Git,
+publication, or external-action permissions.
 
 ## Shared setup lifecycle
 

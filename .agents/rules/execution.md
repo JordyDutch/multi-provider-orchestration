@@ -6,11 +6,13 @@ integration.
 ## Quality-first efficiency
 
 1. Protect decisive planning, implementation, diagnosis, and final judgement.
-2. Use efficient tiers only for bounded support work with explicit success
-   criteria.
+2. Delegate bounded execution and support with explicit success criteria to
+   the suitable specialist. The entry owner retains planning, integration, and
+   judgement.
 3. Prefer tests, a concrete diff, and primary sources over extra model sampling.
-4. Check scope and worker suitability before a full repository survey. Give a
-   suitable worker the map it needs; do not solve its scope first.
+4. Before substantial execution, choose the worker and its scope, or identify
+   why owner execution is better. Give the worker a compact map before a full
+   repository survey; do not solve its scope first.
 5. Send a fresh compact task brief instead of conversation history where the
    API supports it. Return findings or patches with files, checks, blockers,
    and decisions, not transcripts.
@@ -47,13 +49,14 @@ integration.
 2. Make the narrow change with the provider-appropriate tier selected by the
    active baseline or `routing.md`.
 3. Run the focused deterministic check.
-4. Skip delegation and review while consequence and ambiguity remain negligible.
+4. Keep tiny work with the owner or shell. Delegate worthwhile mechanical
+   batches; skip review when checks are decisive.
 
 ### Normal behavioral work
 
 1. One owner scopes the behavior and verification using `routing.md`.
-2. Use a bounded specialist from `routing.md` when the hand-off is worthwhile.
-   Tiny scopes may stay with the owner.
+2. Delegate suitable bounded execution through `delegation.md` when the
+   quality and savings gates hold. Tiny or unclear scopes stay with the owner.
 3. Run focused tests and inspect the integrated diff.
 4. Use one opposite-provider review when the risk triggers in `reviews.md` apply.
 5. Validate findings, fix confirmed defects, and rerun affected checks.

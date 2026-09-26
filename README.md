@@ -17,9 +17,10 @@ for people who clone the repository before installing it.
 | `.agents/AGENTS.md` | Canonical portable baseline installed globally. |
 | `.agents/ORCHESTRATION.md` | Short task router that selects only relevant playbooks. |
 | `.agents/rules/` | On-demand routing, review, execution, and setup guidance. |
-| `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review helpers. |
+| `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review and task helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
 | `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
+| `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task` and `fable-task`. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
@@ -64,8 +65,8 @@ The installer:
 
 - copies `.agents/AGENTS.md` to `~/.codex/AGENTS.md`;
 - copies the router to `~/.codex/ORCHESTRATION.md` and rules to `~/.codex/rules/`;
-- installs `claude-review`, `fable-review`, `sol-review`, `astra-review`, and
-  `refresh-global-setup` under `~/.local/bin`;
+- installs `claude-review`, `fable-review`, `sol-review`, `astra-review`,
+  `opus-task`, `fable-task`, and `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
 - backs up differing installed files and verifies every copy byte-for-byte.
@@ -108,14 +109,23 @@ missing, or failing checkouts stop safely without overwriting user work.
 
 ## Model and reasoning routes
 
-Astra owns Codex orchestration; Fable owns Claude orchestration. Either owner
-selects specialists across providers by task fit. The canonical
+Astra owns Codex orchestration and assigns work to Sol, Luna, Opus, and Fable.
+Astra keeps the plan, task allocation, integration, and final judgement even
+when Claude executes a scope. Fable owns only direct Claude-led entry sessions.
+Both entry owners can choose suitable Sol, Luna, or Opus scopes. The canonical
 [model routing guide](.agents/rules/routing.md) contains model IDs, roles,
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
 Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
-complex implementation and Luna handling mechanical work.
+complex implementation at `high` and difficult diagnosis at `xhigh`. Luna uses
+`low` for one mechanical pass or `medium` for batches. Table counts, groups,
+and totals use Luna `medium` with a code or CLI calculation whose command and
+output are returned for the owner to check.
+
+Use Fable early for architecture input, difficult diagnosis, or complex
+execution when its capability fits. Astra can select it directly without first
+requiring a failed Sol or Opus attempt.
 
 Choose a specialist after a cheap scope check only with a known scope,
 sufficient capability, decisive checks, and expected net savings. Keep unclear
@@ -134,6 +144,60 @@ The installer adds instructions and helpers without changing `config.toml`,
 existing tasks, or remote hosts. Routing is instruction-guided; there is no
 automatic dispatcher or guaranteed cost saving. A smaller model can still use
 more tokens if it receives excess context or causes repeated work.
+
+### Assign specialist work
+
+The [delegation guide](.agents/rules/delegation.md) describes the brief, launch,
+and return contract. Astra launches native Codex workers with explicit model
+and effort: Sol `high` for implementation (`xhigh` for difficult diagnosis), or
+Luna `low` for mechanical work (`medium` for batches). Use a fresh compact brief
+where supported. Unconfigured workers can inherit the parent's model. Direct
+Claude-led Fable can assign the same Codex specialists through installed
+`codex exec`, with explicit model, effort, working directory, and sandbox. The
+delegation guide gives the exact CLI route and compact catalog preflight. Start
+read-only; use `workspace-write` only for already-authorized local edits in
+isolated or non-overlapping paths. Capture the first run's exit status, result,
+and runtime model/effort. A model name in the brief alone does not route it.
+
+For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.1 at `high`
+effort and use the existing Claude subscription login:
+
+```sh
+opus-task /path/to/worktree /path/to/brief.md
+fable-task --effort high /path/to/worktree /path/to/brief.md
+opus-task --edit /path/to/worktree /path/to/brief.md
+```
+
+Put the goal, exact read/write paths, acceptance checks, and constraints in the
+brief. Each helper starts a fresh session, defaults to read-only, and enables
+file edits only with `--edit` for work the user already authorized. Give writers
+isolated worktrees or non-overlapping paths. Choose a narrow working directory
+containing only the relevant repository material; paths in the brief are
+instructions, not a per-file access boundary.
+Claude's built-in and user-level startup context can still load; the helpers
+do not copy the owner's conversation history. The brief names the calling
+owner, and the helper tells the worker to return decisions to that owner.
+
+Example brief for a bounded code task; adapt the paths and command to the repository:
+
+```markdown
+Owner: Astra. Worker: Opus via `opus-task --edit`. No nested delegation.
+Goal: Return 400 instead of 500 when `/api/orders` receives an invalid date.
+Read: src/api/orders.ts, src/lib/dates.ts, tests/api/orders.test.ts
+Write: src/api/orders.ts, tests/api/orders.test.ts
+Acceptance (Astra runs): npm test -- tests/api/orders.test.ts
+Constraints: preserve unrelated files and the existing response shape.
+Return: changed files, checks actually performed, blockers, decisions for Astra.
+```
+
+Requires `jq` and a Claude CLI supporting restricted mode and the necessary
+permission flags. Helpers expose file tools only, with no shell, MCP, or nested
+agents. The entry owner runs tests and authorized Git operations. They check the returned runtime
+model and fail on missing capabilities, authentication errors, permission
+denials, or mismatched results without substituting another model. A failed
+run retains a private result file for diagnosis; an editing task can leave
+partial changes to inspect. Independent review remains
+separate and follows the implementation author and risk.
 
 ## Task completion
 
@@ -162,8 +226,11 @@ cp -R .agents/. /path/to/repo/.agents/
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
+cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
+cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
-  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review
+  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
+  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
