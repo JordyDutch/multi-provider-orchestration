@@ -13,7 +13,7 @@ From the cloned checkout, run:
 
 The installer copies the canonical baseline and router from `.agents/` into
 `~/.codex`, copies `.agents/rules/` into `~/.codex/rules/`, installs the
-review and refresh helpers under `~/.local/bin`, and adds exactly one
+review, task, and refresh helpers under `~/.local/bin`, and adds exactly one
 `@~/.codex/AGENTS.md` import to `~/.claude/CLAUDE.md`. It preserves existing
 Claude-only instructions, backs up differing installed files, and verifies all
 copies byte-for-byte.
@@ -55,8 +55,11 @@ cp -R .agents/. /path/to/repo/.agents/
 mkdir -p /path/to/repo/scripts
 cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
+cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
+cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
-  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review
+  /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
+  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task
 ```
 
 Add repository-specific rules under `## This repo` in the destination root
@@ -78,13 +81,22 @@ for one session:
 codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
 ```
 
-Sol handles bounded and complex execution and regular reviews. Fable owns
-Claude-led sessions; use Opus for frontend/UX or implementation by fit, verified
-Sonnet for mechanical Claude work, and Luna for mechanical Codex work.
+Sol handles bounded and complex execution and regular reviews; Luna handles
+mechanical work. Astra can assign Opus frontend/UX or implementation and involve
+Fable early for architecture input, difficult diagnosis, or complex execution
+while retaining ownership. Fable owns direct Claude-led entry sessions and can
+assign suitable Sol, Luna, or Opus scopes. Launch routes live in
+[delegation.md](delegation.md).
 
-The installer adds `astra-review` alongside `sol-review`; it does not change
+The installer adds `opus-task` and `fable-task` for scoped Claude assignments,
+alongside the independent review helpers. It does not change
 `config.toml`, existing tasks, or other machines. The model picker or explicit
 CLI model selects the entry session. For a worker, select its live-verified
 model and effort in the actual spawn; instructions alone cannot switch models.
 There is no automatic dispatch or cost guarantee. Smaller models may use more
-tokens if context or repeated work grows; keep hand-offs compact.
+tokens if context or repeated work grows; keep hand-offs compact. The task helpers
+require a Claude CLI with restricted mode and the supported permission flags,
+plus `jq`. They use the existing subscription login and fail closed when a
+required capability is missing. Their default is read-only; `--edit` enables
+file edits in the assigned working directory, with tests and Git left to the
+entry owner.

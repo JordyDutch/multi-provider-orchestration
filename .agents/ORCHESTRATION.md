@@ -13,6 +13,7 @@ read every playbook by default.
 | Security, auth, permissions, funds, destructive work, data-loss risk, migrations, or costly architecture | Routing, execution, and reviews | Strongest suitable owner and mandatory opposite-provider review |
 | Global installation, refresh, portability, or model availability | [`rules/setup.md`](rules/setup.md) | Fail-closed checks and byte-for-byte verification |
 | Parallel or multi-agent work | [`rules/execution.md`](rules/execution.md) | Only independent scopes, bounded fan-out, no unapproved nesting |
+| Assigning a specialist | [`rules/routing.md`](rules/routing.md) and [`rules/delegation.md`](rules/delegation.md) | Explicit model and effort, compact brief, owner integrates |
 
 ## Canonical rules
 

@@ -59,6 +59,10 @@ backup_if_different \
 backup_if_different \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
 backup_if_different \
+  "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/opus-task"
+backup_if_different \
+  "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
+backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
@@ -79,6 +83,10 @@ install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/claude-review"
 install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/fable-review"
+install -m 755 "$repo_dir/scripts/claude-task.sh" \
+  "$local_bin_dir/opus-task"
+install -m 755 "$repo_dir/scripts/claude-task.sh" \
+  "$local_bin_dir/fable-task"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
   "$local_bin_dir/sol-review"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
@@ -104,6 +112,8 @@ verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
+verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/opus-task"
+verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
 verify_copy \
@@ -118,6 +128,8 @@ printf '%s\n' \
   "  $installed_rules_dir/*.md" \
   "  $local_bin_dir/claude-review" \
   "  $local_bin_dir/fable-review" \
+  "  $local_bin_dir/opus-task" \
+  "  $local_bin_dir/fable-task" \
   "  $local_bin_dir/sol-review" \
   "  $local_bin_dir/astra-review" \
   "  $local_bin_dir/refresh-global-setup" \
@@ -148,6 +160,20 @@ else
     "Warning: a fresh shell does not resolve $local_bin_dir/fable-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi
+
+for task_helper in opus-task fable-task; do
+  fresh_task=''
+  if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
+    fresh_task="$("$SHELL" -lic "command -v $task_helper" 2>/dev/null || true)"
+  fi
+  if [ "$fresh_task" = "$local_bin_dir/$task_helper" ]; then
+    printf 'Fresh shell resolves %s at %s\n' "$task_helper" "$fresh_task"
+  else
+    printf '%s\n' \
+      "Warning: a fresh shell does not resolve $local_bin_dir/$task_helper." \
+      "Add $local_bin_dir to PATH in your shell configuration." >&2
+  fi
+done
 
 fresh_sol=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
