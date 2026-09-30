@@ -7,10 +7,12 @@ fail() {
   exit "${2:-64}"
 }
 
+effort=high
 case "$(basename -- "$0")" in
   claude-task.sh|opus-task) model=claude-opus-5-5 ;;
   fable-task) model=claude-fable-5-1 ;;
-  *) fail 'unknown entry point; use opus-task or fable-task.' ;;
+  sonnet-task) model=claude-sonnet-5-5; effort=low ;;
+  *) fail 'unknown entry point; use opus-task, fable-task, or sonnet-task.' ;;
 esac
 
 if [ "${CLAUDE_TASK_MODEL+x}" = x ]; then
@@ -18,7 +20,6 @@ if [ "${CLAUDE_TASK_MODEL+x}" = x ]; then
 fi
 
 mode=read-only
-effort=high
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --read-only|--edit)
@@ -34,7 +35,7 @@ while [ "$#" -gt 0 ]; do
     *) break ;;
   esac
 done
-[ "$#" -eq 2 ] || fail 'usage: opus-task|fable-task [--read-only|--edit] [--effort low|medium|high|xhigh|max] WORKDIR BRIEF_FILE'
+[ "$#" -eq 2 ] || fail 'usage: opus-task|fable-task|sonnet-task [--read-only|--edit] [--effort low|medium|high|xhigh|max] WORKDIR BRIEF_FILE'
 
 workdir="$1"
 brief_file="$2"

@@ -14,14 +14,13 @@ Do not launch every available model.
 | Assigned work | Worker | Execution route |
 | --- | --- | --- |
 | Implementation, tests, bounded analysis | Sol high for implementation, medium for bounded analysis, xhigh for difficult diagnosis | Native Codex worker; `codex exec` from Claude |
-| Mechanical extraction, inventory, transformations | Luna low, medium for batches or table aggregates | Native Codex worker; `codex exec` from Claude |
+| Mechanical extraction, inventory, transformations | Luna low/medium; Sonnet 5.5 low/medium for file-only work | Native Codex worker; `codex exec` from Claude; `sonnet-task` |
 | Frontend/UX or substantive implementation by fit | Opus high | `opus-task` |
 | Architecture input, difficult diagnosis, complex analysis or implementation | Fable high | `fable-task` |
 
-Use Fable early when its capability fits a difficult scope. Astra can assign it
-directly; a failed Sol or Opus attempt is not a prerequisite. Either entry owner
-may choose suitable Sol, Luna, or Opus scopes. Keep briefs focused and avoid
-duplicate work. Review effort still follows `reviews.md`.
+Use Fable early for difficult scopes; a failed Sol or Opus run is not required.
+Astra can assign it directly. Either entry owner may choose Sol, Luna, Sonnet,
+or Opus by fit. Avoid duplicate work; review effort follows `reviews.md`.
 
 For native Codex workers, set both `model` and `reasoning_effort`; use
 `fork_turns: "none"` with a fresh brief when that interface supports it.
@@ -38,7 +37,7 @@ not dump the raw catalog. If the shell disallows a pipeline, redirect the
 catalog to a private temporary file and run `jq` separately.
 
 ```sh
-codex exec --model gpt-6-sol -c 'model_reasoning_effort="high"' \
+codex exec --model gpt-6.1-sol -c 'model_reasoning_effort="high"' \
   --sandbox read-only -C /path/to/worktree -o /path/to/result.txt \
   < /path/to/brief.md
 codex exec --model gpt-6-luna -c 'model_reasoning_effort="low"' \
@@ -71,12 +70,13 @@ on its first meaningful task. A requested model name alone is not proof of use.
 ## Claude task helpers
 
 Run these in host context so Claude can use its existing subscription login.
-The installer provides both helpers; they preflight authentication themselves.
+The installer provides these helpers; they preflight authentication themselves.
 Each starts a fresh session from an explicit working directory and brief file:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md
 fable-task --effort high /path/to/worktree /path/to/brief.md
+sonnet-task --effort medium /path/to/worktree /path/to/brief.md
 opus-task --edit /path/to/worktree /path/to/brief.md
 ```
 
@@ -88,9 +88,10 @@ by the task. Give parallel writers isolated worktrees or non-overlapping paths.
 Use a narrow working directory containing only the relevant repository context;
 named paths in the brief are instructions, not a file-level sandbox.
 
-The helpers pin `claude-opus-5-5` or `claude-fable-5-1`, default to high effort,
-and expose file reading/searching, plus Edit/Write only in edit mode. Restricted
-mode confines file tools to the working directory. They expose no shell, MCP,
+The helpers pin `claude-opus-5-5`/high, `claude-fable-5-1`/high, or
+`claude-sonnet-5-5`/low (medium for batches). They expose file reading/searching,
+plus Edit/Write only in edit mode. Restricted mode confines file tools to the
+working directory. They expose no shell, MCP,
 or nested-agent tools. The entry owner runs the required tests and Git
 operations. This route supports code edits; assignments needing commands return
 to that owner.

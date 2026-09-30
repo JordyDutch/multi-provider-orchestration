@@ -19,13 +19,13 @@ case "$(basename "$0")" in
   sol-review|sol-review.sh)
     reviewer="Sol"
     env_prefix="SOL_REVIEW"
-    model="${SOL_REVIEW_MODEL:-gpt-6-sol}"
+    model="${SOL_REVIEW_MODEL:-gpt-6.1-sol}"
     effort="${SOL_REVIEW_EFFORT:-xhigh}"
     review_mode="${SOL_REVIEW_MODE:-review}"
     diff_path="${SOL_REVIEW_DIFF_PATH:-}"
     max_diff_bytes="${SOL_REVIEW_MAX_DIFF_BYTES:-200000}"
-    if [ "$model" != "gpt-6-sol" ]; then
-      echo "Sol review unavailable: model must be pinned to gpt-6-sol; use astra-review for Astra." >&2
+    if [ "$model" != "gpt-6.1-sol" ]; then
+      echo "Sol review unavailable: model must be pinned to gpt-6.1-sol; use astra-review for Astra." >&2
       exit 64
     fi
     ;;
@@ -124,11 +124,11 @@ else
 fi
 
 if [ -n "$diff_path" ]; then
-  scope_status="$(git --literal-pathspecs status --porcelain -- "$diff_path")"
-  review_status="$(git --literal-pathspecs status --short --branch -- "$diff_path")"
+  scope_status="$(git --literal-pathspecs status --porcelain --untracked-files=all -- "$diff_path")"
+  review_status="$(git --literal-pathspecs status --short --branch --untracked-files=all -- "$diff_path")"
 else
-  scope_status="$(git status --porcelain)"
-  review_status="$(git status --short --branch)"
+  scope_status="$(git status --porcelain --untracked-files=all)"
+  review_status="$(git status --short --branch --untracked-files=all)"
 fi
 
 if [ "$review_mode" = "review" ] && \

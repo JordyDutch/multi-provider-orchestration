@@ -48,11 +48,9 @@ claude-review "Review the affected behavior for concrete defects and missing tes
 fable-review "Review this cross-cutting change for architecture defects."
 ```
 
-The default mode reviews tracked changes against `HEAD` as one combined diff and
-lists untracked paths for inspection. Before a repository's first commit it
-includes both the staged diff and the current working-copy delta, so edits made
-after staging are not missed. It fails closed only when the selected scope
-contains no tracked or untracked changes. For a clean-tree audit:
+The default reviews one combined diff against `HEAD` and lists untracked paths.
+Before the first commit it includes staged and working-copy deltas. Empty
+scopes fail closed. For an intentional clean-tree audit:
 
 ```sh
 CLAUDE_REVIEW_MODE=audit claude-review \
@@ -67,10 +65,12 @@ CLAUDE_REVIEW_DIFF_PATH=src/auth claude-review \
   "Review only the authentication changes."
 ```
 
-The wrapper rejects absolute paths and traversal. It pins Opus 5.5/high or
-Fable 5.1/xhigh, allows only `Read`, `Grep`, `Glob`, disables unrelated MCP and
-slash-command context, and separates dynamic context from the cache prefix.
-Older CLIs retain allow/deny lists and report unsupported optimizations.
+The wrapper rejects absolute paths, traversal, and efforts outside
+low/medium/high/xhigh/max. It pins Opus 5.5/high or Fable 5.1/xhigh; requires
+`jq`, restricted mode, `Read,Grep,Glob` only, no MCP, slash commands, or session
+persistence. Missing safety flags fail before inference; cache separation is
+optional. Only successful JSON results with no denials and the exact model are
+printed. Failures retain a private result file; auth data is never printed.
 
 Helpers cap diff plus status at 200,000 bytes. Scope first; raise the matching
 `*_REVIEW_MAX_DIFF_BYTES` only when the complete larger diff is required.
@@ -91,12 +91,12 @@ report the fallback; never substitute an older Opus model.
 
 ## Codex helpers from Claude
 
-`sol-review` pins `gpt-6-sol` at xhigh; `astra-review` pins `gpt-6-astra`
+`sol-review` pins `gpt-6.1-sol` at xhigh; `astra-review` pins `gpt-6-astra`
 at high (request xhigh for an exceptional review). Both use ephemeral read-only
 sessions and keep the calling orchestrator as owner, including Astra when
 reviewing Claude contributions. The shared script dispatches by executable name.
-Each reads only its matching `SOL_REVIEW_*` or `ASTRA_REVIEW_*` settings; model
-overrides must match that helper's exact model. Failure never triggers fallback.
+Each reads only matching `SOL_REVIEW_*` or `ASTRA_REVIEW_*` settings; overrides
+must match its exact model. Failure never triggers fallback.
 Unknown names and efforts outside low/medium/high/xhigh/max fail closed.
 
 Requires `jq`; `codex debug models` must confirm the exact model and effort

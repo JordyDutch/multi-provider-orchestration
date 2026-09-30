@@ -63,6 +63,8 @@ backup_if_different \
 backup_if_different \
   "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
 backup_if_different \
+  "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/sonnet-task"
+backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
@@ -87,6 +89,8 @@ install -m 755 "$repo_dir/scripts/claude-task.sh" \
   "$local_bin_dir/opus-task"
 install -m 755 "$repo_dir/scripts/claude-task.sh" \
   "$local_bin_dir/fable-task"
+install -m 755 "$repo_dir/scripts/claude-task.sh" \
+  "$local_bin_dir/sonnet-task"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
   "$local_bin_dir/sol-review"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
@@ -114,6 +118,7 @@ verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/fable-review"
 verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/opus-task"
 verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
+verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/sonnet-task"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
 verify_copy \
@@ -130,19 +135,22 @@ printf '%s\n' \
   "  $local_bin_dir/fable-review" \
   "  $local_bin_dir/opus-task" \
   "  $local_bin_dir/fable-task" \
+  "  $local_bin_dir/sonnet-task" \
   "  $local_bin_dir/sol-review" \
   "  $local_bin_dir/astra-review" \
   "  $local_bin_dir/refresh-global-setup" \
   "Claude import preserved in $claude_rules"
 
+shell_verification_failed=0
 fresh_helper=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-  fresh_helper="$("$SHELL" -lic 'command -v claude-review' 2>/dev/null || true)"
+  fresh_helper="$("$SHELL" -lic 'command -v claude-review' 2>/dev/null)" || fresh_helper=''
 fi
 
 if [ "$fresh_helper" = "$local_bin_dir/claude-review" ]; then
   printf 'Fresh shell resolves claude-review at %s\n' "$fresh_helper"
 else
+  shell_verification_failed=1
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/claude-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
@@ -150,25 +158,27 @@ fi
 
 fresh_fable=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-  fresh_fable="$("$SHELL" -lic 'command -v fable-review' 2>/dev/null || true)"
+  fresh_fable="$("$SHELL" -lic 'command -v fable-review' 2>/dev/null)" || fresh_fable=''
 fi
 
 if [ "$fresh_fable" = "$local_bin_dir/fable-review" ]; then
   printf 'Fresh shell resolves fable-review at %s\n' "$fresh_fable"
 else
+  shell_verification_failed=1
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/fable-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi
 
-for task_helper in opus-task fable-task; do
+for task_helper in opus-task fable-task sonnet-task; do
   fresh_task=''
   if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-    fresh_task="$("$SHELL" -lic "command -v $task_helper" 2>/dev/null || true)"
+    fresh_task="$("$SHELL" -lic "command -v $task_helper" 2>/dev/null)" || fresh_task=''
   fi
   if [ "$fresh_task" = "$local_bin_dir/$task_helper" ]; then
     printf 'Fresh shell resolves %s at %s\n' "$task_helper" "$fresh_task"
   else
+    shell_verification_failed=1
     printf '%s\n' \
       "Warning: a fresh shell does not resolve $local_bin_dir/$task_helper." \
       "Add $local_bin_dir to PATH in your shell configuration." >&2
@@ -177,12 +187,13 @@ done
 
 fresh_sol=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-  fresh_sol="$("$SHELL" -lic 'command -v sol-review' 2>/dev/null || true)"
+  fresh_sol="$("$SHELL" -lic 'command -v sol-review' 2>/dev/null)" || fresh_sol=''
 fi
 
 if [ "$fresh_sol" = "$local_bin_dir/sol-review" ]; then
   printf 'Fresh shell resolves sol-review at %s\n' "$fresh_sol"
 else
+  shell_verification_failed=1
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/sol-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
@@ -190,12 +201,13 @@ fi
 
 fresh_astra=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-  fresh_astra="$("$SHELL" -lic 'command -v astra-review' 2>/dev/null || true)"
+  fresh_astra="$("$SHELL" -lic 'command -v astra-review' 2>/dev/null)" || fresh_astra=''
 fi
 
 if [ "$fresh_astra" = "$local_bin_dir/astra-review" ]; then
   printf 'Fresh shell resolves astra-review at %s\n' "$fresh_astra"
 else
+  shell_verification_failed=1
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/astra-review." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
@@ -203,13 +215,21 @@ fi
 
 fresh_refresh=''
 if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
-  fresh_refresh="$("$SHELL" -lic 'command -v refresh-global-setup' 2>/dev/null || true)"
+  fresh_refresh="$("$SHELL" -lic 'command -v refresh-global-setup' 2>/dev/null)" || fresh_refresh=''
 fi
 
 if [ "$fresh_refresh" = "$local_bin_dir/refresh-global-setup" ]; then
   printf 'Fresh shell resolves refresh-global-setup at %s\n' "$fresh_refresh"
 else
+  shell_verification_failed=1
   printf '%s\n' \
     "Warning: a fresh shell does not resolve $local_bin_dir/refresh-global-setup." \
     "Add $local_bin_dir to PATH in your shell configuration." >&2
+fi
+
+if [ "$shell_verification_failed" -ne 0 ]; then
+  printf '%s\n' \
+    'Installation incomplete: files were installed, but fresh-shell helper verification failed.' \
+    'Check SHELL and PATH, then rerun the installer. Refresh will not record success.' >&2
+  exit 5
 fi

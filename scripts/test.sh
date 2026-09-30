@@ -25,6 +25,7 @@ sh -n "$repo_dir/scripts/claude-task.sh"
 sh -n "$repo_dir/scripts/test-claude-task.sh"
 sh -n "$repo_dir/scripts/sol-review.sh"
 sh -n "$repo_dir/scripts/refresh-global-setup.sh"
+sh -n "$repo_dir/scripts/test-refresh-global-setup.sh"
 git -C "$repo_dir" diff --check
 test "$(wc -l <"$repo_dir/AGENTS.md")" -le 30
 test "$(wc -c <"$repo_dir/AGENTS.md")" -le 1500
@@ -47,11 +48,11 @@ grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Luna (`gpt-6-luna`) at `low`' \
   "$repo_dir/.agents/AGENTS.md"
-grep -qF 'Sol (`gpt-6-sol`) at' \
+grep -qF 'Sol (`gpt-6.1-sol`) at' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/.agents/AGENTS.md"
-grep -qF 'those specialists or live-verified Sonnet 5' \
+grep -qF 'those specialists or live-verified Sonnet 5.5' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'rules/routing.md' \
   "$repo_dir/.agents/AGENTS.md"
@@ -94,7 +95,7 @@ grep -qF '`rules/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/.agents/ORCHESTRATION.md"
 grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `high` |' \
+grep -qF '| Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
@@ -102,7 +103,7 @@ grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` |' \
+grep -qF '| Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF "Either entry owner may choose by fit and savings" \
   "$repo_dir/.agents/rules/routing.md"
@@ -114,7 +115,7 @@ grep -qF "Review provider follows the implementation author" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF 'use Sol medium for bounded analysis or Sol high for implementation' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF 'codex exec --model gpt-6-sol' \
+grep -qF 'codex exec --model gpt-6.1-sol' \
   "$repo_dir/.agents/rules/delegation.md"
 grep -qF 'codex exec --model gpt-6-luna' \
   "$repo_dir/.agents/rules/delegation.md"
@@ -134,7 +135,7 @@ grep -qF 'follow the implementation author, not the orchestrator' \
 grep -qF ".agents/AGENTS.md" "$repo_dir/.agents/rules/setup.md"
 grep -qF '(.agents/rules/routing.md)' "$repo_dir/README.md"
 grep -qF '(.agents/rules/reviews.md)' "$repo_dir/README.md"
-grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Opus, and Fable." \
+grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Sonnet, Opus, and Fable." \
   "$repo_dir/README.md"
 grep -qF ".agents/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
@@ -150,8 +151,15 @@ printf '%s\n' 'Keep local guidance.' >"$test_home/.codex/rules/local.md"
 printf '%s\n' 'prefix_rule(pattern=["example-command"], decision="prompt")' \
   >"$test_home/original-default.rules"
 cp "$test_home/original-default.rules" "$test_home/.codex/rules/default.rules"
-HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
-HOME="$test_home" "$repo_dir/scripts/install-global.sh" >/dev/null
+test_shell="$test_home/test-shell"
+cat >"$test_shell" <<'EOF'
+#!/bin/sh
+test "$#" -eq 2 && test "$1" = -lic || exit 64
+PATH="$HOME/.local/bin:/usr/bin:/bin" exec /bin/sh -c "$2"
+EOF
+chmod +x "$test_shell"
+HOME="$test_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+HOME="$test_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
 
 # One backup per differing target, even after the repeated installation.
 set -- "$test_home/.codex/AGENTS.md.backup."*
@@ -186,7 +194,7 @@ cmp -s \
 cmp -s \
   "$repo_dir/scripts/claude-review.sh" \
   "$test_home/.local/bin/fable-review"
-for task_helper in opus-task fable-task; do
+for task_helper in opus-task fable-task sonnet-task; do
   cmp -s \
     "$repo_dir/scripts/claude-task.sh" \
     "$test_home/.local/bin/$task_helper"
@@ -209,11 +217,11 @@ grep -qF "Keep this Claude-only instruction." \
 
 # A clean machine needs the same complete instruction tree as an upgrade.
 fresh_home="$test_home/fresh-home"
-HOME="$fresh_home" "$repo_dir/scripts/install-global.sh" >/dev/null
+HOME="$fresh_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
 cmp -s "$repo_dir/.agents/AGENTS.md" "$fresh_home/.codex/AGENTS.md"
 cmp -s "$repo_dir/.agents/ORCHESTRATION.md" \
   "$fresh_home/.codex/ORCHESTRATION.md"
-for task_helper in opus-task fable-task; do
+for task_helper in opus-task fable-task sonnet-task; do
   cmp -s \
     "$repo_dir/scripts/claude-task.sh" \
     "$fresh_home/.local/bin/$task_helper"
@@ -248,6 +256,7 @@ CODEX_SETUP_REPO="$test_home/missing-setup" \
 
 mkdir -p "$test_home/dirty-setup"
 git -c init.templateDir= -C "$test_home/dirty-setup" init -q
+git -C "$test_home/dirty-setup" config status.showUntrackedFiles no
 touch "$test_home/dirty-setup/uncommitted"
 if CODEX_SETUP_REPO="$test_home/dirty-setup" \
   CODEX_SETUP_STATE_DIR="$test_home/refresh-state" \
@@ -274,27 +283,51 @@ fi
 ln -s "$jq_bin" "$fake_bin/jq"
 FAKE_CODEX_CATALOG="$test_home/models.json"
 export FAKE_CODEX_CATALOG
-jq -n '{models: ["gpt-6-sol", "gpt-6-astra"] | map({
+jq -n '{models: ["gpt-6.1-sol", "gpt-6-astra"] | map({
   slug: ., supported_reasoning_levels:
     ["low", "medium", "high", "xhigh", "max"] | map({effort: .})
 })}' >"$FAKE_CODEX_CATALOG"
 
-printf '%s\n' \
-  '#!/bin/sh' \
-  'if [ "$1" = "--help" ]; then' \
-  '  if [ "${FAKE_CLAUDE_HELP:-full}" = "full" ]; then' \
-  '    printf "%s\n" "--tools --strict-mcp-config --disable-slash-commands --exclude-dynamic-system-prompt-sections"' \
-  '  else' \
-  '    printf "%s\n" "Usage: claude"' \
-  '  fi' \
-  '  exit 0' \
-  'fi' \
-  'if [ "$1" = "auth" ] && [ "$2" = "status" ]; then' \
-  '  printf "%s\n" "{\"loggedIn\": true}"' \
-  '  exit 0' \
-  'fi' \
-  'printf "%s\n" "$@" >"$CAPTURE_ARGS"' \
-  'cat >"$CAPTURE_STDIN"' >"$fake_bin/claude"
+cat >"$fake_bin/claude" <<'EOF'
+#!/bin/sh
+if [ "$1" = "--help" ]; then
+  if [ "${FAKE_CLAUDE_HELP:-full}" = none ]; then
+    printf '%s\n' 'Usage: claude'
+  else
+    for flag in --print --model --effort --restricted --tools --permission-mode --permission-prompts --strict-mcp-config --disable-slash-commands --no-session-persistence --output-format --exclude-dynamic-system-prompt-sections; do
+      [ "$flag" != "${FAKE_CLAUDE_HELP#missing:}" ] || continue
+      if [ "${FAKE_CLAUDE_HELP:-full}" = no-cache ] && [ "$flag" = --exclude-dynamic-system-prompt-sections ]; then continue; fi
+      printf '%s\n' "$flag"
+    done
+  fi
+  exit 0
+fi
+if [ "$1" = auth ] && [ "$2" = status ]; then
+  if [ "${FAKE_CLAUDE_AUTH:-yes}" = yes ]; then
+    printf '%s\n' '{"loggedIn":true}'
+  else
+    printf '%s\n' '{"loggedIn":false,"private":"must never print"}'
+  fi
+  exit 0
+fi
+printf '%s\n' "$@" >"$CAPTURE_ARGS"
+model=''
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = --model ]; then model="$2"; fi
+  shift
+done
+if [ "${FAKE_CLAUDE_SLEEP:-no}" = yes ]; then
+  printf '%s\n' "$$" >"$CAPTURE_PID"
+  exec sleep 30
+fi
+cat >"$CAPTURE_STDIN"
+if [ -n "${FAKE_CLAUDE_RESULT:-}" ]; then
+  cat "$FAKE_CLAUDE_RESULT"
+else
+  jq -n --arg model "$model" '{type:"result",subtype:"success",is_error:false,permission_denials:[],modelUsage:{($model):{}},result:"Review completed."}'
+fi
+exit "${FAKE_CLAUDE_STATUS:-0}"
+EOF
 
 printf '%s\n' \
   '#!/bin/sh' \
@@ -342,6 +375,11 @@ grep -qxF "Read,Grep,Glob" "$test_home/fable.args"
 grep -qxF -- "--strict-mcp-config" "$test_home/fable.args"
 grep -qxF -- "--disable-slash-commands" "$test_home/fable.args"
 grep -qxF -- "--exclude-dynamic-system-prompt-sections" "$test_home/fable.args"
+grep -qxF -- "--restricted" "$test_home/fable.args"
+grep -qxF -- "--no-session-persistence" "$test_home/fable.args"
+grep -qxF -- "--permission-prompts" "$test_home/fable.args"
+grep -qxF 'none' "$test_home/fable.args"
+grep -qxF 'json' "$test_home/fable.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/fable.stdin"
 grep -qF "=== git diff HEAD ===" "$test_home/fable.stdin"
 grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/fable.stdin"
@@ -388,33 +426,131 @@ grep -qxF "high" "$test_home/opus.args"
 grep -qF "smallest additional repository context needed" \
   "$test_home/opus.stdin"
 
-PATH="$fake_bin:/usr/bin:/bin" \
+for missing_flag in --restricted --tools --permission-prompts --strict-mcp-config --disable-slash-commands --no-session-persistence --output-format; do
+  if PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" \
+    FAKE_CLAUDE_HELP="missing:$missing_flag" \
+    CAPTURE_ARGS="$test_home/missing-flag.args" CAPTURE_STDIN="$test_home/missing-flag.stdin" \
+    "$fake_bin/claude-review" 'Review only.' >"$test_home/missing-flag.stdout" 2>"$test_home/missing-flag.stderr"; then
+    printf 'Expected missing safety flag to block review: %s\n' "$missing_flag" >&2
+    exit 1
+  fi
+  grep -qF "installed CLI lacks $missing_flag" "$test_home/missing-flag.stderr"
+  test ! -e "$test_home/missing-flag.args"
+done
+
+for invalid_effort in ultra extreme; do
+  if PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" CLAUDE_REVIEW_EFFORT="$invalid_effort" \
+    CAPTURE_ARGS="$test_home/invalid-effort.args" CAPTURE_STDIN="$test_home/invalid-effort.stdin" \
+    "$fake_bin/claude-review" 'Review only.' >"$test_home/invalid-effort.stdout" 2>"$test_home/invalid-effort.stderr"; then
+    printf 'Expected invalid review effort to fail: %s\n' "$invalid_effort" >&2
+    exit 1
+  fi
+  test ! -e "$test_home/invalid-effort.args"
+  grep -qF 'CLAUDE_REVIEW_EFFORT must be' "$test_home/invalid-effort.stderr"
+done
+
+if PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" FAKE_CLAUDE_AUTH=no \
+  CAPTURE_ARGS="$test_home/auth-failure.args" CAPTURE_STDIN="$test_home/auth-failure.stdin" \
+  "$fake_bin/claude-review" 'Review only.' >"$test_home/auth-failure.stdout" 2>"$test_home/auth-failure.stderr"; then
+  printf '%s\n' 'Expected failed Claude authentication to block review.' >&2
+  exit 1
+fi
+test ! -e "$test_home/auth-failure.args"
+if grep -qF 'must never print' "$test_home/auth-failure.stderr"; then
+  printf '%s\n' 'Raw authentication data leaked into review diagnostics.' >&2
+  exit 1
+fi
+
+expect_bad_review_result() {
+  failure_status=0
+  PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" TMPDIR="$test_home" \
+    CAPTURE_ARGS="$test_home/bad-result.args" CAPTURE_STDIN="$test_home/bad-result.stdin" \
+    "$fake_bin/claude-review" 'Review only.' >"$test_home/bad-result.stdout" 2>"$test_home/bad-result.stderr" || failure_status=$?
+  test "$failure_status" -eq "${1:-7}"
+  test ! -s "$test_home/bad-result.stdout"
+  if grep -qF UNVALIDATED_RESULT "$test_home/bad-result.stderr"; then
+    printf '%s\n' 'Unvalidated provider text leaked into review diagnostics.' >&2
+    exit 1
+  fi
+  retained_file="$(sed -n 's/^Retained Claude result: //p' "$test_home/bad-result.stderr")"
+  test -f "$retained_file"
+  retained_dir="$(dirname "$retained_file")"
+  test "$(find "$retained_dir" -perm 700 -print)" = "$retained_dir"
+  test "$(find "$retained_file" -perm 600 -print)" = "$retained_file"
+  test ! -e "$retained_dir/prompt"
+  test ! -e "$retained_dir/diff"
+  rm -rf "$retained_dir"
+}
+
+jq -n '{type:"result",subtype:"success",is_error:false,permission_denials:[],modelUsage:{"claude-opus-5-5":{}},result:"UNVALIDATED_RESULT"}' >"$test_home/base-result.json"
+for invalid_result in \
+  '.subtype="error" | .is_error=true' \
+  '.permission_denials=[{tool:"Write"}]' \
+  '.modelUsage={"claude-opus-5":{}}' \
+  '.modelUsage={"claude-fable-5-1":{}}' \
+  '.modelUsage={"claude-opus-5-5":{},"claude-fable-5-1":{}}' \
+  'del(.modelUsage)' \
+  '.result=""'; do
+  jq "$invalid_result" "$test_home/base-result.json" >"$test_home/bad-result.json"
+  (FAKE_CLAUDE_RESULT="$test_home/bad-result.json" expect_bad_review_result)
+done
+printf '%s\n' 'UNVALIDATED_RESULT' >"$test_home/bad-result.json"
+(FAKE_CLAUDE_RESULT="$test_home/bad-result.json" expect_bad_review_result)
+cat "$test_home/base-result.json" "$test_home/base-result.json" >"$test_home/bad-result.json"
+(FAKE_CLAUDE_RESULT="$test_home/bad-result.json" expect_bad_review_result)
+(FAKE_CLAUDE_RESULT="$test_home/base-result.json" FAKE_CLAUDE_STATUS=23 expect_bad_review_result 23)
+grep -qF 'provider exited 23' "$test_home/bad-result.stderr"
+
+PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" TMPDIR="$test_home" \
+  FAKE_CLAUDE_SLEEP=yes CAPTURE_PID="$test_home/claude-pid" \
+  CAPTURE_ARGS="$test_home/signal.args" CAPTURE_STDIN="$test_home/signal.stdin" \
+  "$fake_bin/claude-review" 'Review only.' >"$test_home/signal.stdout" 2>"$test_home/signal.stderr" &
+wrapper_pid=$!
+attempt=0
+while [ ! -s "$test_home/claude-pid" ] && [ "$attempt" -lt 50 ]; do
+  sleep 0.1
+  attempt=$((attempt + 1))
+done
+test -s "$test_home/claude-pid"
+provider_pid="$(cat "$test_home/claude-pid")"
+kill -TERM "$wrapper_pid"
+signal_status=0
+wait "$wrapper_pid" || signal_status=$?
+test "$signal_status" -eq 143
+if kill -0 "$provider_pid" 2>/dev/null; then
+  printf '%s\n' 'Interrupted review left its provider process running.' >&2
+  exit 1
+fi
+grep -qF 'interrupted by signal' "$test_home/signal.stderr"
+retained_file="$(sed -n 's/^Retained Claude result: //p' "$test_home/signal.stderr")"
+test -f "$retained_file"
+test ! -e "$(dirname "$retained_file")/prompt"
+test ! -e "$(dirname "$retained_file")/diff"
+rm -rf "$(dirname "$retained_file")"
+
+if PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
   FAKE_CLAUDE_HELP=none \
   CAPTURE_ARGS="$test_home/degraded-help.args" \
   CAPTURE_STDIN="$test_home/degraded-help.stdin" \
   "$fake_bin/claude-review" "Review only." \
   >"$test_home/degraded-help.stdout" \
-  2>"$test_home/degraded-help.stderr"
+  2>"$test_home/degraded-help.stderr"; then
+  printf '%s\n' 'Expected missing Claude safety capabilities to fail before inference.' >&2
+  exit 1
+fi
+grep -qF 'installed CLI lacks --print' "$test_home/degraded-help.stderr"
+test ! -e "$test_home/degraded-help.args"
 
-for optional_flag in \
-  --tools \
-  --strict-mcp-config \
-  --disable-slash-commands \
-  --exclude-dynamic-system-prompt-sections; do
-  if grep -qxF -- "$optional_flag" "$test_home/degraded-help.args"; then
-    printf 'Unsupported flag was passed to Claude: %s\n' \
-      "$optional_flag" >&2
-    exit 1
-  fi
-  grep -qF "installed CLI lacks $optional_flag" \
-    "$test_home/degraded-help.stderr"
-done
-grep -qxF -- "--allowedTools" "$test_home/degraded-help.args"
-grep -qxF -- "--disallowedTools" "$test_home/degraded-help.args"
-grep -qxF "MultiEdit" "$test_home/degraded-help.args"
-grep -qxF "Task" "$test_home/degraded-help.args"
-grep -qxF "WebFetch" "$test_home/degraded-help.args"
+PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" FAKE_CLAUDE_HELP=no-cache \
+  CAPTURE_ARGS="$test_home/no-cache.args" CAPTURE_STDIN="$test_home/no-cache.stdin" \
+  "$fake_bin/claude-review" 'Review only.' >"$test_home/no-cache.stdout" 2>"$test_home/no-cache.stderr"
+grep -qF 'Review completed.' "$test_home/no-cache.stdout"
+grep -qF 'installed CLI lacks --exclude-dynamic-system-prompt-sections' "$test_home/no-cache.stderr"
+if grep -qxF -- '--exclude-dynamic-system-prompt-sections' "$test_home/no-cache.args"; then
+  printf '%s\n' 'Unsupported cache optimization was passed to Claude.' >&2
+  exit 1
+fi
 
 printf '%s\n' "unrelated" >"$review_repo/unrelated.txt"
 
@@ -480,6 +616,7 @@ grep -qF "no tracked or untracked changes found" \
 test ! -e "$test_home/empty-diff.args"
 
 printf '%s\n' "new" >"$review_repo/untracked.txt"
+git config status.showUntrackedFiles no
 
 PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
@@ -579,7 +716,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/sol.stdin" \
   "$repo_dir/scripts/sol-review.sh" "Review only." >/dev/null
 
-grep -qxF "gpt-6-sol" "$test_home/sol.args"
+grep -qxF "gpt-6.1-sol" "$test_home/sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/sol.args"
 grep -qxF "read-only" "$test_home/sol.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/sol.stdin"
@@ -588,15 +725,15 @@ grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
 
 # The installed Sol entry point keeps its exact model even with Astra settings.
 PATH="$fake_bin:/usr/bin:/bin" \
-  SOL_REVIEW_MODEL=gpt-6-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
+  SOL_REVIEW_MODEL=gpt-6.1-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
   CAPTURE_ARGS="$test_home/installed-sol.args" \
   CAPTURE_STDIN="$test_home/installed-sol.stdin" \
   "$test_home/.local/bin/sol-review" "Review only." >/dev/null
-grep -qxF "gpt-6-sol" "$test_home/installed-sol.args"
+grep -qxF "gpt-6.1-sol" "$test_home/installed-sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
 grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
 
-for invalid_model in gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavailable; do
+for invalid_model in gpt-6-sol gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavailable; do
   if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
     CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
@@ -605,12 +742,28 @@ for invalid_model in gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavai
     printf 'Expected Sol model override to fail closed: %s\n' "$invalid_model" >&2
     exit 1
   fi
-  grep -qF "model must be pinned to gpt-6-sol" "$test_home/sol-invalid-model.stderr"
+  grep -qF "model must be pinned to gpt-6.1-sol" "$test_home/sol-invalid-model.stderr"
   test ! -e "$test_home/sol-invalid-model.args"
 done
 
 # Old, malformed, failed, or effort-incompatible catalogs must prevent inference.
 printf '%s\n' '{"models":[{"slug":"gpt-5.6-sol"}]}' >"$test_home/old-models.json"
+jq '.models |= map(select(.slug != "gpt-6.1-sol")) + [{
+  slug: "gpt-6-sol", supported_reasoning_levels: [{effort: "xhigh"}]
+}]' "$FAKE_CODEX_CATALOG" >"$test_home/prior-sol-models.json"
+if PATH="$fake_bin:/usr/bin:/bin" \
+  FAKE_CODEX_CATALOG="$test_home/prior-sol-models.json" \
+  CAPTURE_ARGS="$test_home/prior-sol.args" \
+  CAPTURE_STDIN="$test_home/prior-sol.stdin" \
+  "$test_home/.local/bin/sol-review" "Review only." \
+  >"$test_home/prior-sol.stdout" 2>"$test_home/prior-sol.stderr"; then
+  printf '%s\n' "Expected GPT-6 Sol availability not to authorize GPT-6.1 Sol." >&2
+  exit 1
+else
+  test "$?" -eq 6
+fi
+grep -qF 'does not confirm gpt-6.1-sol at xhigh' "$test_home/prior-sol.stderr"
+test ! -e "$test_home/prior-sol.args"
 printf '%s\n' 'not-json' >"$test_home/invalid-models.json"
 jq '.models[].supported_reasoning_levels = [{effort: "low"}]' \
   "$FAKE_CODEX_CATALOG" >"$test_home/low-only-models.json"
@@ -707,6 +860,10 @@ grep -qF "no tracked or untracked changes found" \
 test ! -e "$test_home/sol-empty.args"
 
 printf '%s\n' "status-only" >"$review_repo/sol-status-only.txt"
+PATH="$fake_bin:/usr/bin:/bin" HOME="$test_home" \
+  CAPTURE_ARGS="$test_home/sol-untracked.args" CAPTURE_STDIN="$test_home/sol-untracked.stdin" \
+  "$repo_dir/scripts/sol-review.sh" 'Review only.' >/dev/null
+grep -qF '?? sol-status-only.txt' "$test_home/sol-untracked.stdin"
 if PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
   SOL_REVIEW_MAX_DIFF_BYTES=1 \
@@ -829,6 +986,7 @@ rm unrelated-astra.txt
 
 for invalid_setting in \
   ASTRA_REVIEW_MODEL=gpt-6-sol \
+  ASTRA_REVIEW_MODEL=gpt-6.1-sol \
   ASTRA_REVIEW_MODEL=astra \
   ASTRA_REVIEW_EFFORT=ultra \
   ASTRA_REVIEW_EFFORT=invalid \
@@ -884,7 +1042,7 @@ PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
   "$test_home/.local/bin/sol-review" "Review only." >/dev/null || sol_status=$?
 test "$sol_status" -eq 42
 test "$(wc -l <"$test_home/sol-failure.calls")" -eq 1
-grep -qxF "gpt-6-sol" "$test_home/sol-failure.args"
+grep -qxF "gpt-6.1-sol" "$test_home/sol-failure.args"
 
 astra_status=0
 PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
@@ -916,5 +1074,6 @@ grep -qxF 'model_reasoning_effort="max"' "$test_home/astra-audit.args"
 grep -qF "=== git diff HEAD ===" "$test_home/astra-audit.stdin"
 
 sh "$repo_dir/scripts/test-claude-task.sh"
+sh "$repo_dir/scripts/test-refresh-global-setup.sh"
 
 printf '%s\n' "All orchestration tests passed."
