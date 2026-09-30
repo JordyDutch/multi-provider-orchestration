@@ -20,7 +20,7 @@ if [ ! -d "$setup_repo/.git" ]; then
   exit 1
 fi
 
-if [ -n "$(git -C "$setup_repo" status --porcelain)" ]; then
+if [ -n "$(git -C "$setup_repo" status --porcelain --untracked-files=all)" ]; then
   printf '%s\n' \
     "Global setup refresh blocked: $setup_repo has uncommitted changes." \
     "Commit, stash, or use a separate clean canonical checkout; no files were changed." >&2
@@ -28,11 +28,15 @@ if [ -n "$(git -C "$setup_repo" status --porcelain)" ]; then
 fi
 
 remote_url="$(git -C "$setup_repo" remote get-url origin 2>/dev/null || true)"
-if [ "$remote_url" != "https://github.com/JordyDutch/multi-provider-orchestration" ]; then
-  printf '%s\n' \
-    "Global setup refresh blocked: origin must be https://github.com/JordyDutch/multi-provider-orchestration." >&2
-  exit 3
-fi
+case "$remote_url" in
+  https://github.com/JordyDutch/multi-provider-orchestration|https://github.com/JordyDutch/multi-provider-orchestration.git)
+    ;;
+  *)
+    printf '%s\n' \
+      "Global setup refresh blocked: origin must be https://github.com/JordyDutch/multi-provider-orchestration (optional .git suffix)." >&2
+    exit 3
+    ;;
+esac
 
 git -C "$setup_repo" fetch --quiet origin main
 

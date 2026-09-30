@@ -46,15 +46,15 @@ Mandatory reviews apply regardless of savings.
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
 - For the no-playbook route in Codex-led work, use Luna (`gpt-6-luna`) at `low`
-  for mechanical work or `medium` for multiple items; Sol (`gpt-6-sol`) at
+  for mechanical work or `medium` for multiple items; Sol (`gpt-6.1-sol`) at
   `medium` when bounded judgement is needed. In Claude-led work, Fable may use
-  those specialists or live-verified Sonnet 5 when a hand-off is worthwhile.
-- Astra owns Codex orchestration and delegates suitable scopes to Sol, Luna,
+  those specialists or live-verified Sonnet 5.5 when a hand-off is worthwhile.
+- Astra owns Codex orchestration and delegates by fit to Sol, Luna, Sonnet,
   Opus, or Fable. Fable owns only direct Claude-led sessions. Use
   `rules/routing.md` to choose and `rules/delegation.md` to launch workers.
   The owner integrates and verifies; delegation never transfers ownership.
-- Pin Claude Opus to exact `claude-opus-5-5` and Fable to exact
-  `claude-fable-5-1`. Never silently replace either with an older model.
+- Pin Opus to exact `claude-opus-5-5`, Fable to `claude-fable-5-1`, and Sonnet
+  to `claude-sonnet-5-5`; never silently use older models.
 - Require an opposite-provider review for security, authentication,
   authorization, funds, destructive changes, data-loss risk, costly-to-reverse
   architecture, unfamiliar behavioral changes, conflicting evidence, and hard

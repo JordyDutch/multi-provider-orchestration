@@ -20,7 +20,7 @@ for people who clone the repository before installing it.
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review and task helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
 | `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
-| `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task` and `fable-task`. |
+| `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task`, `fable-task`, and `sonnet-task`. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
@@ -56,7 +56,7 @@ renaming a shell script into `commands/` does not register a prompt command.
 ## Install globally
 
 ```sh
-git clone https://github.com/JordyDutch/multi-provider-orchestration.git
+git clone https://github.com/JordyDutch/multi-provider-orchestration
 cd multi-provider-orchestration
 ./scripts/install-global.sh
 ```
@@ -66,7 +66,7 @@ The installer:
 - copies `.agents/AGENTS.md` to `~/.codex/AGENTS.md`;
 - copies the router to `~/.codex/ORCHESTRATION.md` and rules to `~/.codex/rules/`;
 - installs `claude-review`, `fable-review`, `sol-review`, `astra-review`,
-  `opus-task`, `fable-task`, and `refresh-global-setup` under `~/.local/bin`;
+  `opus-task`, `fable-task`, `sonnet-task`, and `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
 - backs up differing installed files and verifies every copy byte-for-byte.
@@ -81,7 +81,11 @@ If the repository has just been cloned and is not installed yet, root
 `AGENTS.md` and `CLAUDE.md` direct both engines to the local shared baseline.
 That keeps the GitHub repository usable without a prior machine-level setup.
 
-If `~/.local/bin` is not on `PATH`, add it to the shell configuration.
+Installation succeeds only when a fresh login shell resolves every helper to
+its installed path. If `~/.local/bin` is missing from `PATH`, another executable
+shadows a helper, or the shell check fails, the installer exits with status 5.
+Files have already been copied at that point. Fix `SHELL` or the shell's `PATH`
+and rerun the installer; daily refresh records success only after this passes.
 
 Upgrades install the new router and `.agents/rules/` content together. An older
 `~/.codex/playbooks/` directory is left intact for existing references; the new
@@ -103,25 +107,25 @@ day, the installed agent runs:
 refresh-global-setup
 ```
 
-The helper accepts only the canonical GitHub origin, a clean fast-forward to
-`origin/main`, passing tests, and a verified reinstall. Dirty, divergent,
+The helper accepts only the canonical GitHub HTTPS origin (with or without the
+`.git` suffix), a clean fast-forward to `origin/main`, passing tests, and a verified reinstall. Dirty, divergent,
 missing, or failing checkouts stop safely without overwriting user work.
 
 ## Model and reasoning routes
 
-Astra owns Codex orchestration and assigns work to Sol, Luna, Opus, and Fable.
+Astra owns Codex orchestration and assigns work to Sol, Luna, Sonnet, Opus, and Fable.
 Astra keeps the plan, task allocation, integration, and final judgement even
 when Claude executes a scope. Fable owns only direct Claude-led entry sessions.
-Both entry owners can choose suitable Sol, Luna, or Opus scopes. The canonical
-[model routing guide](.agents/rules/routing.md) contains model IDs, roles,
+Both entry owners can choose suitable Sol, Luna, Sonnet, or Opus scopes. The
+canonical [model routing guide](.agents/rules/routing.md) contains model IDs, roles,
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
-Codex routing uses Astra, Sol, and Luna, with Sol handling both everyday and
-complex implementation at `high` and difficult diagnosis at `xhigh`. Luna uses
-`low` for one mechanical pass or `medium` for batches. Table counts, groups,
-and totals use Luna `medium` with a code or CLI calculation whose command and
-output are returned for the owner to check.
+Codex routing uses Astra, GPT-6.1 Sol (`gpt-6.1-sol`), and Luna, with Sol handling
+both everyday and complex implementation at `high` and difficult diagnosis at
+`xhigh`. Luna uses `low` for one mechanical pass or `medium` for batches. Table
+counts, groups, and totals use Luna `medium` with a code or CLI calculation
+whose command and output are returned for the owner to check.
 
 Use Fable early for architecture input, difficult diagnosis, or complex
 execution when its capability fits. Astra can select it directly without first
@@ -160,11 +164,13 @@ isolated or non-overlapping paths. Capture the first run's exit status, result,
 and runtime model/effort. A model name in the brief alone does not route it.
 
 For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.1 at `high`
-effort and use the existing Claude subscription login:
+effort, or Sonnet 5.5 (`claude-sonnet-5-5`) at `low` for mechanical work
+(`medium` for batches), and use the existing Claude subscription login:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md
 fable-task --effort high /path/to/worktree /path/to/brief.md
+sonnet-task --effort medium /path/to/worktree /path/to/brief.md
 opus-task --edit /path/to/worktree /path/to/brief.md
 ```
 
@@ -189,6 +195,12 @@ Acceptance (Astra runs): npm test -- tests/api/orders.test.ts
 Constraints: preserve unrelated files and the existing response shape.
 Return: changed files, checks actually performed, blockers, decisions for Astra.
 ```
+
+Sonnet 5.5 requires Claude Code 2.1.284 or newer; see the
+[Claude model configuration](https://code.claude.com/docs/en/model-config).
+Run `claude update` if your CLI is older. Sonnet handles bounded mechanical
+support; Sol or Opus handles behavioral judgement and the entry owner retains
+architecture and integration decisions.
 
 Requires `jq` and a Claude CLI supporting restricted mode and the necessary
 permission flags. Helpers expose file tools only, with no shell, MCP, or nested
@@ -228,9 +240,11 @@ cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
 cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
+cp scripts/claude-task.sh /path/to/repo/scripts/sonnet-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
   /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
-  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task
+  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task \
+  /path/to/repo/scripts/sonnet-task
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
@@ -276,12 +290,15 @@ ASTRA_REVIEW_DIFF_PATH=src/auth astra-review "Review this path only."
 ```
 
 The Claude wrapper sends one combined `git diff HEAD` (or both the staged diff
-and current working-copy delta before the first commit) and lists untracked paths
-for read-only inspection. On current Claude CLIs it exposes only `Read`, `Grep`,
-and `Glob`, disables unrelated MCP and slash-command context, and asks Claude to
-move per-machine system sections outside the stable prompt-cache prefix. Older
-CLIs retain explicit allow/deny lists and print notices for unavailable context
-optimizations. Both wrappers reject absolute paths and parent traversal, and
+and current working-copy delta before the first commit) and explicitly lists
+untracked paths, even when Git is configured to hide them. It requires restricted
+mode, exposes only `Read`, `Grep`, and `Glob`, and disables MCP, slash commands,
+and session persistence. Requires `jq`; missing safety flags fail before
+inference. Dynamic prompt-cache separation remains an optional optimization.
+The wrapper prints only a successful JSON result with no permission denials and
+the exact requested runtime model. Failures preserve the exit status and retain
+a private result file for diagnosis, without printing raw authentication data.
+Both wrappers reject absolute paths and parent traversal, and
 fail before a model call when diff-plus-status evidence exceeds 200,000 bytes.
 Prefer a path scope; raise
 `CLAUDE_REVIEW_MAX_DIFF_BYTES`, `SOL_REVIEW_MAX_DIFF_BYTES`, or
@@ -289,12 +306,12 @@ Prefer a path scope; raise
 at high and reads only `ASTRA_REVIEW_*` settings; it never automatically falls
 back to Sol. Use `ASTRA_REVIEW_EFFORT=xhigh` for critical Claude-authored work,
 or `max` only for the hardest unresolved judgement. `sol-review` pins
-`gpt-6-sol` at xhigh for normal and complex Claude-code reviews. It reads only
-`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-6-sol` when set. To request
+`gpt-6.1-sol` at xhigh for normal and complex Claude-code reviews. It reads only
+`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-6.1-sol` when set. To request
 Astra, call `astra-review` explicitly; a Sol model override can no longer select
 another model. Both helpers retain the calling orchestrator as owner.
-Both Codex routes reject unknown executable names and efforts outside
-low/medium/high/xhigh/max; `ultra` is not allowed in review hand-offs.
+Both Codex routes reject unknown executable names. All review helpers reject
+efforts outside low/medium/high/xhigh/max; `ultra` is not allowed in review hand-offs.
 
 Run Claude helpers outside the Codex filesystem/process sandbox. They preflight
 authentication themselves, so a separate `claude auth status` immediately before
@@ -315,3 +332,12 @@ git diff --check
 
 Model names, access, and effort levels are volatile. Recheck the official sources
 and compact live CLI catalogs before changing pinned routes.
+
+## Practical calibration
+
+Use the [small calibration record](docs/model-calibration.md) for representative
+tasks as they arise. Start with one real edit and a decisive owner-run check;
+compare at most two routes when a routing decision needs evidence. Record
+correctness, scope, rework, elapsed time, and observed runtime settings. The
+initial isolated edit check is recorded there; it supports the handoff flow,
+without ranking the models from one sample.

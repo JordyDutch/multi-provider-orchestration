@@ -14,8 +14,10 @@ trap 'exit 143' TERM
 mkdir -p "$test_dir/bin" "$test_dir/work dir"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/opus-task"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/fable-task"
+cp "$script_dir/claude-task.sh" "$test_dir/bin/sonnet-task"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/unknown-task"
-chmod +x "$test_dir/bin/opus-task" "$test_dir/bin/fable-task" "$test_dir/bin/unknown-task"
+chmod +x "$test_dir/bin/opus-task" "$test_dir/bin/fable-task" \
+  "$test_dir/bin/sonnet-task" "$test_dir/bin/unknown-task"
 cat >"$test_dir/bin/claude" <<'EOF'
 #!/bin/sh
 case "$1" in
@@ -56,6 +58,7 @@ printf 'Edit only src/example.txt. Literal shell text: $(touch %s/injection) and
   "$test_dir" >"$test_dir/brief"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{}},"result":"Changed src/example.txt"}' >"$test_dir/opus.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-fable-5-1":{}},"result":"Fable result"}' >"$test_dir/fable.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5-5":{}},"result":"Sonnet result"}' >"$test_dir/sonnet.json"
 
 export PATH="$test_dir/bin:/usr/bin:/bin"
 export CAPTURE_ARGS="$test_dir/args"
@@ -107,6 +110,23 @@ grep -qxF 'xhigh' "$test_dir/args"
 grep -qxF 'acceptEdits' "$test_dir/args"
 grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
 grep -qF 'model=claude-fable-5-1 effort=xhigh mode=edit' "$test_dir/err"
+FAKE_RESULT="$test_dir/sonnet.json" "$test_dir/bin/sonnet-task" \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Sonnet result' "$test_dir/out"
+grep -qxF 'claude-sonnet-5-5' "$test_dir/args"
+grep -qxF 'low' "$test_dir/args"
+grep -qxF 'dontAsk' "$test_dir/args"
+grep -qxF 'Read,Grep,Glob' "$test_dir/args"
+grep -qxF -- '--restricted' "$test_dir/args"
+grep -qxF -- '--no-session-persistence' "$test_dir/args"
+grep -qF 'model=claude-sonnet-5-5 effort=low mode=read-only' "$test_dir/err"
+FAKE_RESULT="$test_dir/sonnet.json" "$test_dir/bin/sonnet-task" --edit --effort medium \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Sonnet result' "$test_dir/out"
+grep -qxF 'medium' "$test_dir/args"
+grep -qxF 'acceptEdits' "$test_dir/args"
+grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
+grep -qF 'model=claude-sonnet-5-5 effort=medium mode=edit' "$test_dir/err"
 "$test_dir/bin/opus-task" --read-only --effort low \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'low' "$test_dir/args"
@@ -135,6 +155,9 @@ expect_no_inference "$test_dir/bin/opus-task" --effort
 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/missing" "$test_dir/brief"
 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/missing"
 (CLAUDE_TASK_MODEL=claude-fable-5-1 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief")
+(CLAUDE_TASK_MODEL=claude-sonnet-5 expect_no_inference "$test_dir/bin/sonnet-task" "$test_dir/work dir" "$test_dir/brief")
+expect_no_inference "$test_dir/bin/sonnet-task" --model claude-sonnet-5 "$test_dir/work dir" "$test_dir/brief"
+expect_no_inference "$test_dir/bin/sonnet-task" --effort ultracode "$test_dir/work dir" "$test_dir/brief"
 touch "$test_dir/empty"
 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/empty"
 printf ' \t\n \n' >"$test_dir/blank"
@@ -164,8 +187,9 @@ done
 grep -qF 'jq is required' "$test_dir/err"
 
 expect_bad_result() {
+  result_helper="${1:-opus-task}"
   rm -f "$CAPTURE_ARGS"
-  if "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"; then
+  if "$test_dir/bin/$result_helper" "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"; then
     printf '%s\n' 'Expected provider result rejection.' >&2
     exit 1
   fi
@@ -205,6 +229,16 @@ cat "$test_dir/opus.json" "$test_dir/opus.json" >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{},"claude-fable-5-1":{}},"result":"mixed models"}' >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
+
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5":{}},"result":"older Sonnet"}' >"$test_dir/bad.json"
+(FAKE_RESULT="$test_dir/bad.json" expect_bad_result sonnet-task)
+grep -qF '"modelUsage_keys":["claude-sonnet-5"]' "$test_dir/err"
+if grep -qF 'older Sonnet' "$test_dir/err"; then
+  printf '%s\n' 'Unvalidated Sonnet result text leaked into diagnostics.' >&2
+  exit 1
+fi
+(FAKE_RESULT="$test_dir/opus.json" expect_bad_result sonnet-task)
+grep -qF '"modelUsage_keys":["claude-opus-5-5"]' "$test_dir/err"
 
 rm -f "$CAPTURE_ARGS"
 provider_status=0

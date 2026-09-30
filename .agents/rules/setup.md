@@ -18,6 +18,11 @@ review, task, and refresh helpers under `~/.local/bin`, and adds exactly one
 Claude-only instructions, backs up differing installed files, and verifies all
 copies byte-for-byte.
 
+Fresh-shell verification must resolve every helper to its installed path.
+Missing or shadowed helpers and shell failures return status 5 after files are
+copied. Fix `SHELL` or its `PATH` and rerun; refresh preserves its previous
+success stamp until all checks pass.
+
 Older `~/.codex/playbooks/` files are preserved for existing references. The new
 router selects `~/.codex/rules/`; unrelated installed files remain untouched.
 These `*.md` instruction modules are distinct from Codex's native `*.rules`
@@ -57,9 +62,11 @@ cp scripts/claude-review.sh scripts/sol-review.sh /path/to/repo/scripts/
 cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
 cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
+cp scripts/claude-task.sh /path/to/repo/scripts/sonnet-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
   /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
-  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task
+  /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task \
+  /path/to/repo/scripts/sonnet-task
 ```
 
 Add repository-specific rules under `## This repo` in the destination root
@@ -85,11 +92,11 @@ Sol handles bounded and complex execution and regular reviews; Luna handles
 mechanical work. Astra can assign Opus frontend/UX or implementation and involve
 Fable early for architecture input, difficult diagnosis, or complex execution
 while retaining ownership. Fable owns direct Claude-led entry sessions and can
-assign suitable Sol, Luna, or Opus scopes. Launch routes live in
+assign suitable Sol, Luna, Sonnet, or Opus scopes. Launch routes live in
 [delegation.md](delegation.md).
 
-The installer adds `opus-task` and `fable-task` for scoped Claude assignments,
-alongside the independent review helpers. It does not change
+The installer adds `opus-task`, `fable-task`, and `sonnet-task` for scoped Claude
+assignments, alongside the independent review helpers. It does not change
 `config.toml`, existing tasks, or other machines. The model picker or explicit
 CLI model selects the entry session. For a worker, select its live-verified
 model and effort in the actual spawn; instructions alone cannot switch models.

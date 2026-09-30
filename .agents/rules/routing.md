@@ -12,7 +12,7 @@ codex debug models | jq -r '
   .models[]
   | select(
       .slug == "gpt-6-astra"
-      or .slug == "gpt-6-sol"
+      or .slug == "gpt-6.1-sol"
       or .slug == "gpt-6-luna"
     )
   | [
@@ -34,14 +34,14 @@ the affected scope. Never silently substitute models. Use supported effort only.
 | Role | Model | Starting effort | Use |
 | --- | --- | --- | --- |
 | Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` | Planning, task allocation, integration, and final judgement |
-| Codex implementation specialist | GPT-6 Sol (`gpt-6-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis; review effort follows `reviews.md` |
+| Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis; review effort follows `reviews.md` |
 | Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
 | Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Complex work assigned by Astra, direct Claude-led orchestration, and cross-cutting reviews |
 | Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
-| Claude efficient | Sonnet 5 (`claude-sonnet-5`) | `low` | Low-risk bulk reading and mechanical support after live verification |
+| Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` | Mechanical support via `sonnet-task`; medium for batches |
 
 Use the lowest sufficient effort. Never use bare or `latest` aliases for
-pinned Opus and Fable routes.
+pinned Opus, Fable, and Sonnet routes.
 
 ## Choose by consequence
 
@@ -64,7 +64,7 @@ high for analysis; the owner decides architecture and integrates.
 
 Delegate execution only with known scope, sufficient capability, decisive checks,
 and expected net savings; otherwise keep the strong owner. Mandatory reviews
-apply regardless of savings. Both entry owners can choose Sol, Luna, or Opus by
+apply regardless of savings. Both entry owners can choose Sol, Luna, Sonnet, or Opus by
 task fit. Consider Opus for frontend/UX before authoring.
 Claude is not limited to reviewing Codex. A hand-off never transfers ownership.
 Use the owner or shell for tiny deterministic tasks.
@@ -99,7 +99,8 @@ do not compensate with `xhigh` or `max` by default.
 ## Live sources
 
 - OpenAI model guidance: `https://developers.openai.com/api/docs/guides/latest-model`
+- GPT-6.1 Sol: `https://developers.openai.com/api/docs/models/gpt-6.1-sol`
 - Codex models: `https://learn.chatgpt.com/docs/models`
 - Codex CLI commands: `https://learn.chatgpt.com/docs/developer-commands?surface=cli`
 - Codex subagents: `https://learn.chatgpt.com/docs/agent-configuration/subagents`
-- Claude pricing and models: `https://platform.claude.com/docs/en/about-claude/pricing`
+- Claude models: `https://platform.claude.com/docs/en/models/overview`
