@@ -6,6 +6,8 @@ export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
 # Test installs must stay inside their temporary HOME.
 unset CLAUDE_CONFIG_DIR
+# A forced or redirected refresh must not change the refresh cases below.
+unset SETUP_REFRESH_FORCE SETUP_REFRESH_DATE CODEX_SETUP_REPO CODEX_SETUP_STATE_DIR
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repo_dir="$(dirname "$script_dir")"
@@ -1190,6 +1192,10 @@ grep -qxF 'model_reasoning_effort="max"' "$test_home/astra-audit.args"
 grep -qF "=== git diff HEAD ===" "$test_home/astra-audit.stdin"
 
 sh "$repo_dir/scripts/test-claude-task.sh"
-sh "$repo_dir/scripts/test-refresh-global-setup.sh"
+# The refresh suite must ignore a caller's forced or redirected refresh.
+SETUP_REFRESH_FORCE=1 SETUP_REFRESH_DATE=1999-01-01 \
+  CODEX_SETUP_REPO="$test_home/caller-setup" \
+  CODEX_SETUP_STATE_DIR="$test_home/caller-state" \
+  sh "$repo_dir/scripts/test-refresh-global-setup.sh"
 
 printf '%s\n' "All orchestration tests passed."
