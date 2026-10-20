@@ -14,10 +14,11 @@ From the cloned checkout, run:
 The installer copies the canonical baseline and router from `.agents/` into
 `~/.codex`, copies `.agents/rules/` into `~/.codex/rules/`, copies the pinned
 Claude agent types from `.claude/agents/` into `~/.claude/agents/`, installs the
-review, task, and refresh helpers under `~/.local/bin`, and adds exactly one
-`@~/.codex/AGENTS.md` import to `~/.claude/CLAUDE.md`. It preserves existing
-Claude-only instructions and unrelated agents, backs up differing installed
-files, and verifies all copies byte-for-byte. Claude Code reloads changed
+review, task, and refresh helpers under `~/.local/bin`, adds exactly one
+`@~/.codex/AGENTS.md` import to `~/.claude/CLAUDE.md`, and pins the advisor in
+`~/.claude/settings.json`. It preserves existing Claude-only instructions,
+unrelated agents, and other settings, backs up differing installed files, and
+verifies all copies byte-for-byte. It requires `jq`. Claude Code reloads changed
 agent types; restart a session that started before `~/.claude/agents/` existed.
 When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path
 instead of `~/.claude`; a relative path stops the installer before any write.
@@ -115,10 +116,10 @@ required capability is missing. Their default is read-only; `--edit` enables
 file edits in the assigned working directory, with tests and Git left to the
 entry owner.
 
-The installer never edits `~/.claude/settings.json`. For Claude-led sessions,
-set the advisor there once, as described in
-[claude-native.md](claude-native.md):
-
-```json
-{ "advisorModel": "claude-fable-5-1" }
-```
+The installer sets `advisorModel` to `claude-fable-5-1` in
+`~/.claude/settings.json` and replaces a bare `model` alias (`opus`, `sonnet`,
+`haiku`, or `fable`) with its exact ID; see
+[claude-native.md](claude-native.md). It keeps other keys, the file mode, and a
+symlinked file, and backs up a file it changes. Before any write, settings
+that are not one JSON object return 65, missing `jq` returns 69, and an
+unpinned read-only file or directory returns 73.
