@@ -5,6 +5,8 @@ export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
 # Test installs must stay inside their temporary HOME.
 unset CLAUDE_CONFIG_DIR
+# A forced or redirected refresh must not change the refresh cases below.
+unset SETUP_REFRESH_FORCE SETUP_REFRESH_DATE CODEX_SETUP_REPO CODEX_SETUP_STATE_DIR
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 test_dir="$(mktemp -d "${TMPDIR:-/tmp}/test-setup-refresh.XXXXXX")"
@@ -63,6 +65,15 @@ for valid_url in "$canonical_url" "$canonical_url.git"; do
   test "$(cat "$stamp")" = "$SETUP_REFRESH_DATE"
   test "$(cat "$REFRESH_CALLS")" = "$(printf 'fetch\ntests\ninstall')"
 done
+
+# A same-day stamp skips the refresh unless SETUP_REFRESH_FORCE=1 asks for one.
+rm -f "$REFRESH_CALLS"
+"$script_dir/refresh-global-setup.sh" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF "Global setup already refreshed for $SETUP_REFRESH_DATE." "$test_dir/out"
+test ! -e "$REFRESH_CALLS"
+SETUP_REFRESH_FORCE=1 "$script_dir/refresh-global-setup.sh" >"$test_dir/out" 2>"$test_dir/err"
+test "$(cat "$REFRESH_CALLS")" = "$(printf 'fetch\ntests\ninstall')"
+test "$(cat "$stamp")" = "$SETUP_REFRESH_DATE"
 
 for invalid_url in "$canonical_url.git/" "$canonical_url-extra" \
   'https://github.com/elsewhere/multi-provider-orchestration' \
