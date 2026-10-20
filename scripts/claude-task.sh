@@ -12,7 +12,8 @@ case "$(basename -- "$0")" in
   claude-task.sh|opus-task) model=claude-opus-5-5 ;;
   fable-task) model=claude-fable-5-1 ;;
   sonnet-task) model=claude-sonnet-5-5; effort=low ;;
-  *) fail 'unknown entry point; use opus-task, fable-task, or sonnet-task.' ;;
+  haiku-task) model=claude-haiku-5-5; effort=low ;;
+  *) fail 'unknown entry point; use opus-task, fable-task, sonnet-task, or haiku-task.' ;;
 esac
 
 if [ "${CLAUDE_TASK_MODEL+x}" = x ]; then
@@ -20,10 +21,15 @@ if [ "${CLAUDE_TASK_MODEL+x}" = x ]; then
 fi
 
 mode=read-only
+advisor=off
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --read-only|--edit)
       mode="${1#--}"
+      shift
+      ;;
+    --advisor)
+      advisor=claude-fable-5-1
       shift
       ;;
     --effort)
@@ -35,7 +41,7 @@ while [ "$#" -gt 0 ]; do
     *) break ;;
   esac
 done
-[ "$#" -eq 2 ] || fail 'usage: opus-task|fable-task|sonnet-task [--read-only|--edit] [--effort low|medium|high|xhigh|max] WORKDIR BRIEF_FILE'
+[ "$#" -eq 2 ] || fail 'usage: opus-task|fable-task|sonnet-task|haiku-task [--read-only|--edit] [--advisor] [--effort low|medium|high|xhigh|max] WORKDIR BRIEF_FILE'
 
 workdir="$1"
 brief_file="$2"
@@ -44,6 +50,27 @@ brief_file="$2"
 brief_bytes="$(wc -c <"$brief_file" | tr -d '[:space:]')"
 [ "$brief_bytes" -gt 0 ] && [ "$brief_bytes" -le 64000 ] || fail 'BRIEF_FILE must contain 1 to 64000 bytes.'
 grep -q '[^[:space:]]' "$brief_file" || fail 'BRIEF_FILE must contain nonblank text.'
+
+if [ "$advisor" != off ]; then
+  # Name only the variable; its value is never printed.
+  for advisor_var in \
+    CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
+    CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
+    CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
+    eval "advisor_value=\${$advisor_var-}"
+    # Claude Code reads these as booleans: 0, false, no, and off in any casing.
+    case "$(printf '%s' "$advisor_value" | tr '[:upper:]' '[:lower:]')" in
+      ''|0|false|no|off) ;;
+      *) fail "--advisor is unavailable while $advisor_var is set; unset it or run without --advisor." ;;
+    esac
+  done
+  # Any non-empty value disables these, including 0 and false.
+  for advisor_var in DISABLE_TELEMETRY CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC; do
+    eval "advisor_value=\${$advisor_var-}"
+    [ -z "$advisor_value" ] ||
+      fail "--advisor is unavailable while $advisor_var is set; unset it or run without --advisor."
+  done
+fi
 
 command -v jq >/dev/null 2>&1 || fail 'jq is required.' 127
 claude_bin="$(command -v claude 2>/dev/null || true)"
@@ -67,6 +94,32 @@ for required_flag in \
   --exclude-dynamic-system-prompt-sections; do
   supports_flag "$required_flag" || fail "installed Claude CLI lacks $required_flag." 6
 done
+if [ "$advisor" != off ]; then
+  supports_flag --settings || fail 'installed Claude CLI lacks --settings.' 6
+  # Managed settings can disable or replace the advisor after the environment
+  # check, so ask the CLI under the same restricted settings. /advisor without
+  # an argument is a local command that only prints the active advisor.
+  advisor_probe="$(cd "$workdir" && printf '%s\n' /advisor |
+    "$claude_bin" --print --model "$model" --effort "$effort" --restricted \
+      --strict-mcp-config --no-session-persistence --output-format json \
+      --settings '{"advisorModel":"claude-fable-5-1"}' \
+      --permission-mode dontAsk --permission-prompts none --tools '' \
+      2>/dev/null)" || advisor_probe=''
+  advisor_probe_text="$(printf '%s\n' "$advisor_probe" | jq -rs '
+    if length == 1 and (.[0] | type == "object") then .[0] else empty end
+    | if .type == "result" and .subtype == "success" and .is_error == false
+        and (.modelUsage == null or .modelUsage == {})
+        and (.result | type == "string")
+      then .result else empty end
+  ' 2>/dev/null || true)"
+  advisor_probe_line="$(printf '%s\n' "$advisor_probe_text" | sed -n 1p)"
+  if [ "$advisor_probe_line" != 'Advisor: Fable 5.1' ] ||
+    ! printf '%s\n' "$advisor_probe_text" | sed -n 2p |
+      grep -Eq '^Usage: /advisor <([a-z0-9.-]+[|])*fable([|][a-z0-9.-]+)*>$'; then
+    advisor_probe_line="$(printf '%s' "$advisor_probe_line" | tr -cd '[:print:]' | cut -c1-120)"
+    fail "--advisor could not confirm an available Fable 5.1 advisor under the restricted settings (reported: ${advisor_probe_line:-no valid /advisor result}); run without --advisor." 6
+  fi
+fi
 
 caller_umask="$(umask)"
 umask 077
@@ -84,8 +137,8 @@ cleanup() {
 }
 report_failure() {
   retain_result=yes
-  printf 'Claude task failed: %s (model=%s effort=%s). Edits may remain in WORKDIR.\n' \
-    "$1" "$model" "$effort" >&2
+  printf 'Claude task failed: %s (model=%s effort=%s advisor=%s). Edits may remain in WORKDIR.\n' \
+    "$1" "$model" "$effort" "$advisor" >&2
   result_metadata="$(jq -cs '
     if length == 1 and (.[0] | type == "object") then .[0] else empty end
     | {
@@ -121,9 +174,12 @@ trap 'on_signal 143' TERM
     'You are a bounded Claude implementation specialist. The calling owner named in the brief keeps the plan, integration, and final authority.' \
     'Work only on the explicitly assigned paths and scope in the brief. Do not delegate, spawn agents, use Git, refresh global setup, or install anything.' \
     'Use only the available file tools. You cannot run tests or shell commands in this task; report checks that require the owner to run. Never claim those checks passed.' \
-    'Return a compact report of changed files, checks actually performed, blockers, and decisions for the calling owner to integrate.' \
-    '' \
-    '=== Assigned brief ==='
+    'Return a compact report of changed files, checks actually performed, blockers, and decisions for the calling owner to integrate.'
+  if [ "$advisor" != off ]; then
+    printf '%s\n' \
+      'An advisor tool backed by a stronger model is available. Consult it before committing to an approach, when stuck, and before reporting completion.'
+  fi
+  printf '%s\n' '' '=== Assigned brief ==='
   cat "$brief_file"
 } >"$prompt_file"
 
@@ -137,6 +193,9 @@ set -- \
   --no-session-persistence \
   --output-format json \
   --exclude-dynamic-system-prompt-sections
+if [ "$advisor" != off ]; then
+  set -- "$@" --settings '{"advisorModel":"claude-fable-5-1"}'
+fi
 if [ "$mode" = edit ]; then
   set -- "$@" --permission-mode acceptEdits --permission-prompts none \
     --tools 'Read,Grep,Glob,Edit,Write'
@@ -145,7 +204,8 @@ else
     --tools 'Read,Grep,Glob'
 fi
 
-printf 'Running Claude task: model=%s effort=%s mode=%s\n' "$model" "$effort" "$mode" >&2
+printf 'Running Claude task: model=%s effort=%s mode=%s advisor=%s\n' \
+  "$model" "$effort" "$mode" "$advisor" >&2
 printf '%s\n' 'Claude output is buffered; poll this process rather than starting a duplicate.' >&2
 : >"$result_file"
 provider_status=0
@@ -157,15 +217,31 @@ if [ "$provider_status" -ne 0 ]; then
   report_failure "provider exited $provider_status" "$provider_status"
 fi
 
-if ! jq -ers --arg model "$model" '
+advisor_key=''
+[ "$advisor" = off ] || advisor_key="$advisor"
+if ! jq -ers --arg model "$model" --arg advisor "$advisor_key" '
   if length == 1 and (.[0] | type == "object") then .[0] else empty end
   | if .type == "result" and .subtype == "success" and .is_error == false
       and (.permission_denials == null or .permission_denials == [])
-      and (.modelUsage | type == "object" and (keys == [$model]))
+      and (.modelUsage | if type == "object" then has($model)
+            and (keys | all(. == $model or ($advisor != "" and . == $advisor)))
+          else false end)
       and (.result | type == "string" and length > 0)
     then .result else empty end
 ' "$result_file" >"$task_tmp_dir/result.txt" 2>/dev/null; then
   report_failure 'malformed, denied, or mismatched provider result' 7
 fi
-printf 'Claude task completed: model=%s effort=%s mode=%s\n' "$model" "$effort" "$mode" >&2
+advisor_report=off
+if [ "$advisor" != off ]; then
+  if [ "$model" = "$advisor" ]; then
+    advisor_report="$advisor (not distinguishable)"
+  elif jq -es --arg advisor "$advisor" '.[0].modelUsage | has($advisor)' \
+    "$result_file" >/dev/null 2>&1; then
+    advisor_report="$advisor (called)"
+  else
+    advisor_report="$advisor (not called)"
+  fi
+fi
+printf 'Claude task completed: model=%s effort=%s mode=%s advisor=%s\n' \
+  "$model" "$effort" "$mode" "$advisor_report" >&2
 cat "$task_tmp_dir/result.txt"

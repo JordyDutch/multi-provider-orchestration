@@ -19,6 +19,8 @@ This repository keeps its portable, installable agent baseline under
   is `.agents/AGENTS.md`; the installer copies that file globally.
 - Keep detailed routing in `.agents/rules/`, with each rule defined in one
   module and linked from `.agents/ORCHESTRATION.md`.
+- `.claude/agents/` holds the pinned Claude agent types; keep each `model:` an
+  exact ID matching `.agents/rules/claude-native.md`.
 - Changes to routing, installation, or review helpers require
   `./scripts/test.sh` and `git diff --check`.
 - Update `README.md` whenever installation steps or public helper behavior

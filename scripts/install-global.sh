@@ -6,7 +6,17 @@ script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repo_dir="$(dirname "$script_dir")"
 agents_dir="$repo_dir/.agents"
 codex_dir="$HOME/.codex"
-claude_dir="$HOME/.claude"
+# Claude Code reads its user configuration from CLAUDE_CONFIG_DIR when set.
+claude_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+case "$claude_dir" in
+  /*) ;;
+  *)
+    printf '%s\n' \
+      'CLAUDE_CONFIG_DIR must be an absolute path; no files were changed.' >&2
+    exit 64
+    ;;
+esac
+claude_agents_dir="$claude_dir/agents"
 local_bin_dir="$HOME/.local/bin"
 installed_rules_dir="$codex_dir/rules"
 claude_rules="$claude_dir/CLAUDE.md"
@@ -38,6 +48,7 @@ mkdir -p \
   "$codex_dir" \
   "$installed_rules_dir" \
   "$claude_dir" \
+  "$claude_agents_dir" \
   "$local_bin_dir"
 
 backup_if_different "$agents_dir/AGENTS.md" "$codex_dir/AGENTS.md"
@@ -54,6 +65,17 @@ for source_rule in "$agents_dir"/rules/*.md; do
     "$source_rule" \
     "$installed_rules_dir/$rule"
 done
+for source_agent in "$repo_dir/.claude/agents/"*.md; do
+  test -f "$source_agent" || {
+    printf 'No Claude agent definitions found under %s\n' \
+      "$repo_dir/.claude/agents" >&2
+    exit 3
+  }
+  claude_agent="$(basename "$source_agent")"
+  backup_if_different \
+    "$source_agent" \
+    "$claude_agents_dir/$claude_agent"
+done
 backup_if_different \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
 backup_if_different \
@@ -64,6 +86,8 @@ backup_if_different \
   "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
 backup_if_different \
   "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/sonnet-task"
+backup_if_different \
+  "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/haiku-task"
 backup_if_different \
   "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 backup_if_different \
@@ -81,6 +105,12 @@ for source_rule in "$agents_dir"/rules/*.md; do
     "$source_rule" \
     "$installed_rules_dir/$rule"
 done
+for source_agent in "$repo_dir/.claude/agents/"*.md; do
+  claude_agent="$(basename "$source_agent")"
+  install -m 644 \
+    "$source_agent" \
+    "$claude_agents_dir/$claude_agent"
+done
 install -m 755 "$repo_dir/scripts/claude-review.sh" \
   "$local_bin_dir/claude-review"
 install -m 755 "$repo_dir/scripts/claude-review.sh" \
@@ -91,6 +121,8 @@ install -m 755 "$repo_dir/scripts/claude-task.sh" \
   "$local_bin_dir/fable-task"
 install -m 755 "$repo_dir/scripts/claude-task.sh" \
   "$local_bin_dir/sonnet-task"
+install -m 755 "$repo_dir/scripts/claude-task.sh" \
+  "$local_bin_dir/haiku-task"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
   "$local_bin_dir/sol-review"
 install -m 755 "$repo_dir/scripts/sol-review.sh" \
@@ -112,6 +144,12 @@ for source_rule in "$agents_dir"/rules/*.md; do
     "$source_rule" \
     "$installed_rules_dir/$rule"
 done
+for source_agent in "$repo_dir/.claude/agents/"*.md; do
+  claude_agent="$(basename "$source_agent")"
+  verify_copy \
+    "$source_agent" \
+    "$claude_agents_dir/$claude_agent"
+done
 verify_copy \
   "$repo_dir/scripts/claude-review.sh" "$local_bin_dir/claude-review"
 verify_copy \
@@ -119,6 +157,7 @@ verify_copy \
 verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/opus-task"
 verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/fable-task"
 verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/sonnet-task"
+verify_copy "$repo_dir/scripts/claude-task.sh" "$local_bin_dir/haiku-task"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/sol-review"
 verify_copy "$repo_dir/scripts/sol-review.sh" "$local_bin_dir/astra-review"
 verify_copy \
@@ -131,11 +170,13 @@ printf '%s\n' \
   "  $codex_dir/AGENTS.md" \
   "  $codex_dir/ORCHESTRATION.md" \
   "  $installed_rules_dir/*.md" \
+  "  $claude_agents_dir/*.md" \
   "  $local_bin_dir/claude-review" \
   "  $local_bin_dir/fable-review" \
   "  $local_bin_dir/opus-task" \
   "  $local_bin_dir/fable-task" \
   "  $local_bin_dir/sonnet-task" \
+  "  $local_bin_dir/haiku-task" \
   "  $local_bin_dir/sol-review" \
   "  $local_bin_dir/astra-review" \
   "  $local_bin_dir/refresh-global-setup" \
@@ -170,7 +211,7 @@ else
     "Add $local_bin_dir to PATH in your shell configuration." >&2
 fi
 
-for task_helper in opus-task fable-task sonnet-task; do
+for task_helper in opus-task fable-task sonnet-task haiku-task; do
   fresh_task=''
   if [ -n "${SHELL:-}" ] && [ -x "$SHELL" ]; then
     fresh_task="$("$SHELL" -lic "command -v $task_helper" 2>/dev/null)" || fresh_task=''

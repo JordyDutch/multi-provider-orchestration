@@ -3,6 +3,8 @@
 set -eu
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
+# Test installs must stay inside their temporary HOME.
+unset CLAUDE_CONFIG_DIR
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 test_dir="$(mktemp -d "${TMPDIR:-/tmp}/test-setup-refresh.XXXXXX")"
@@ -117,7 +119,8 @@ EOF
 chmod +x "$test_dir/login-shell"
 
 for failing_check in claude-review fable-review opus-task fable-task sonnet-task \
-  sol-review astra-review refresh-global-setup shadowed nonzero unavailable-shell; do
+  haiku-task sol-review astra-review refresh-global-setup shadowed nonzero \
+  unavailable-shell; do
   printf '%s\n' '2099-01-31' >"$stamp"
   rm -f "$REFRESH_CALLS"
   fixture_shell="$test_dir/login-shell"

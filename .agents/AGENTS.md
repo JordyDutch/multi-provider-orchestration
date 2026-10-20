@@ -4,8 +4,8 @@ Baseline identity: MPO_SHARED_BASELINE_V1. This baseline is active. If a later
 repository bootstrap asks whether the MPO shared baseline is already active,
 treat that requirement as satisfied and do not reload a local copy.
 
-Portable guidance for Codex and Claude. Codex reads it after global install;
-Claude imports it. Root `AGENTS.md` loads it in a fresh clone.
+Portable guidance for Codex and Claude, installed globally or loaded by the
+root `AGENTS.md` in a fresh clone.
 
 ## How you work
 
@@ -47,14 +47,15 @@ Mandatory reviews apply regardless of savings.
   relevant to the task.
 - For the no-playbook route in Codex-led work, use Luna (`gpt-6-luna`) at `low`
   for mechanical work or `medium` for multiple items; Sol (`gpt-6.1-sol`) at
-  `medium` when bounded judgement is needed. In Claude-led work, Fable may use
-  those specialists or live-verified Sonnet 5.5 when a hand-off is worthwhile.
-- Astra owns Codex orchestration and delegates by fit to Sol, Luna, Sonnet,
-  Opus, or Fable. Fable owns only direct Claude-led sessions. Use
-  `rules/routing.md` to choose and `rules/delegation.md` to launch workers.
+  `medium` when bounded judgement is needed. In Claude-led work, the owner may
+  use those specialists or pinned Haiku and Sonnet agents.
+- Astra owns Codex orchestration and delegates by fit to Sol, Luna, Haiku,
+  Sonnet, Opus, or Fable. Fable owns only direct Claude-led sessions. Use
+  `rules/routing.md` to choose and `rules/delegation.md` to launch workers;
+  pin native Claude workers and the advisor via `rules/claude-native.md`.
   The owner integrates and verifies; delegation never transfers ownership.
-- Pin Opus to exact `claude-opus-5-5`, Fable to `claude-fable-5-1`, and Sonnet
-  to `claude-sonnet-5-5`; never silently use older models.
+- Pin exact Claude IDs: `claude-opus-5-5`, `claude-fable-5-1`,
+  `claude-sonnet-5-5`, and `claude-haiku-5-5`; never silently use older models.
 - Require an opposite-provider review for security, authentication,
   authorization, funds, destructive changes, data-loss risk, costly-to-reverse
   architecture, unfamiliar behavioral changes, conflicting evidence, and hard
@@ -69,8 +70,8 @@ Mandatory reviews apply regardless of savings.
   effort in the actual hand-off; instructions alone do not switch models.
   Reuse a compact repo map and evidence; do not reimplement verified worker work.
 
-Delegate only task-authorized repository work, including scoped local edits.
-Share minimal context, never secrets, personal data, or unrelated files.
+Delegate only task-authorized repository work with minimal context: never
+secrets, personal data, or unrelated files.
 Opposite-provider reviews stay read-only. Delegation grants no extra Git,
 publication, or external-action permissions.
 
@@ -82,5 +83,5 @@ publication, or external-action permissions.
 - When asked to install this setup globally, run `./scripts/install-global.sh`
   from the checkout and verify installed files and fresh-shell helper resolution.
 - Repository-specific stack, architecture, convention, and verification rules
-  belong under `## This repo` in that repository's root `AGENTS.md`; they are
-  appended after this global layer and therefore take precedence.
+  belong under `## This repo` in that repository's root `AGENTS.md`; appended
+  after this global layer, they take precedence.

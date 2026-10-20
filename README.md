@@ -16,11 +16,12 @@ for people who clone the repository before installing it.
 | `ORCHESTRATION.md` | Compatibility pointer for older links and copies. |
 | `.agents/AGENTS.md` | Canonical portable baseline installed globally. |
 | `.agents/ORCHESTRATION.md` | Short task router that selects only relevant playbooks. |
-| `.agents/rules/` | On-demand routing, review, execution, and setup guidance. |
+| `.agents/rules/` | On-demand routing, review, execution, setup, and Claude-native guidance. |
+| `.claude/agents/` | Pinned Claude subagent types (`haiku-scout`, `sonnet-worker`, `opus-worker`, `fable-specialist`), installed to `~/.claude/agents/`. |
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review and task helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
 | `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
-| `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task`, `fable-task`, and `sonnet-task`. |
+| `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task`, `fable-task`, `sonnet-task`, and `haiku-task`. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
 
@@ -50,7 +51,8 @@ See [Codex skills](https://learn.chatgpt.com/docs/build-skills#where-codex-loads
 [Claude skills](https://code.claude.com/docs/en/skills), and
 [Claude subagents](https://code.claude.com/docs/en/sub-agents).
 This repository currently ships instruction modules and executable shell
-helpers, with no skill or subagent definitions. Helpers stay in `scripts/`;
+helpers, plus pinned Claude subagent definitions in `.claude/agents/`; it has no
+skills. Helpers stay in `scripts/`;
 renaming a shell script into `commands/` does not register a prompt command.
 
 ## Install globally
@@ -65,10 +67,16 @@ The installer:
 
 - copies `.agents/AGENTS.md` to `~/.codex/AGENTS.md`;
 - copies the router to `~/.codex/ORCHESTRATION.md` and rules to `~/.codex/rules/`;
+- copies the pinned Claude agent types from `.claude/agents/` to
+  `~/.claude/agents/`, preserving unrelated agents;
 - installs `claude-review`, `fable-review`, `sol-review`, `astra-review`,
-  `opus-task`, `fable-task`, `sonnet-task`, and `refresh-global-setup` under `~/.local/bin`;
+  `opus-task`, `fable-task`, `sonnet-task`, `haiku-task`, and
+  `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
+- writes the Claude files under `CLAUDE_CONFIG_DIR` instead of `~/.claude`
+  when that variable is set, and stops before any write if it is not an
+  absolute path;
 - backs up differing installed files and verifies every copy byte-for-byte.
 
 After installation, Codex loads the compact global baseline and then only the
@@ -113,10 +121,10 @@ missing, or failing checkouts stop safely without overwriting user work.
 
 ## Model and reasoning routes
 
-Astra owns Codex orchestration and assigns work to Sol, Luna, Sonnet, Opus, and Fable.
+Astra owns Codex orchestration and assigns work to Sol, Luna, Haiku, Sonnet, Opus, and Fable.
 Astra keeps the plan, task allocation, integration, and final judgement even
 when Claude executes a scope. Fable owns only direct Claude-led entry sessions.
-Both entry owners can choose suitable Sol, Luna, Sonnet, or Opus scopes. The
+Both entry owners can choose suitable Sol, Luna, Haiku, Sonnet, or Opus scopes. The
 canonical [model routing guide](.agents/rules/routing.md) contains model IDs, roles,
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
@@ -164,13 +172,19 @@ isolated or non-overlapping paths. Capture the first run's exit status, result,
 and runtime model/effort. A model name in the brief alone does not route it.
 
 For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.1 at `high`
-effort, or Sonnet 5.5 (`claude-sonnet-5-5`) at `low` for mechanical work
-(`medium` for batches), and use the existing Claude subscription login:
+effort, Sonnet 5.5 (`claude-sonnet-5-5`) at `low` for mechanical work
+(`medium` for batches), or Haiku 5.5 (`claude-haiku-5-5`) at `low` for
+read-only search and extraction, and use the existing Claude subscription login.
+Add `--advisor` to let the worker consult the pinned Fable 5.1 advisor. The
+helper first confirms locally, under the same restricted and managed settings,
+that Fable 5.1 is available, and stops before inference otherwise:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md
 fable-task --effort high /path/to/worktree /path/to/brief.md
 sonnet-task --effort medium /path/to/worktree /path/to/brief.md
+haiku-task /path/to/worktree /path/to/brief.md
+haiku-task --advisor /path/to/worktree /path/to/brief.md
 opus-task --edit /path/to/worktree /path/to/brief.md
 ```
 
@@ -196,10 +210,12 @@ Constraints: preserve unrelated files and the existing response shape.
 Return: changed files, checks actually performed, blockers, decisions for Astra.
 ```
 
-Sonnet 5.5 requires Claude Code 2.1.284 or newer; see the
+Sonnet 5.5 requires Claude Code 2.1.284 or newer and Haiku 5.5 requires 2.1.293
+or newer; see the
 [Claude model configuration](https://code.claude.com/docs/en/model-config).
-Run `claude update` if your CLI is older. Sonnet handles bounded mechanical
-support; Sol or Opus handles behavioral judgement and the entry owner retains
+Run `claude update` if your CLI is older. Haiku handles read-only search and
+extraction, never counts or totals; Sonnet handles bounded mechanical support;
+Sol or Opus handles behavioral judgement and the entry owner retains
 architecture and integration decisions.
 
 Requires `jq` and a Claude CLI supporting restricted mode and the necessary
@@ -210,6 +226,42 @@ denials, or mismatched results without substituting another model. A failed
 run retains a private result file for diagnosis; an editing task can leave
 partial changes to inspect. Independent review remains
 separate and follows the implementation author and risk.
+
+### Claude-native workers and advisor
+
+Claude Code runs native subagents and workflow agents on the session's main
+model unless a model is chosen for each one, and forks always reuse it. An
+Opus-led session therefore stays on Opus unless routing is explicit. The
+installer adds four pinned agent types to `~/.claude/agents/`:
+
+| Agent type | Pinned model and effort | Use |
+| --- | --- | --- |
+| `haiku-scout` | `claude-haiku-5-5`, low | Read-only search, inventory, extraction |
+| `sonnet-worker` | `claude-sonnet-5-5`, medium | Mechanical edits and batches |
+| `opus-worker` | `claude-opus-5-5`, high | Scoped behavioral code, tests, frontend/UX |
+| `fable-specialist` | `claude-fable-5-1`, high | Architecture input and hard diagnosis |
+
+Claude Code reloads changed definitions, but a session that started before
+`~/.claude/agents/` existed needs a restart. Spawn them by agent type without a
+`model` override; the Agent tool's `model` parameter accepts only aliases. In
+workflow scripts, pass an exact model ID and effort to every `agent()` call.
+An Opus or Sonnet session still switches to Fable 5.1 for work the routing
+guide assigns to the Fable owner.
+
+The [advisor](https://code.claude.com/docs/en/advisor) lets the working model
+consult a stronger model at decision points. Pin Fable 5.1 once in
+`~/.claude/settings.json`; the installer does not edit that file:
+
+```json
+{ "advisorModel": "claude-fable-5-1" }
+```
+
+Fable 5.1 can advise every Claude main model, and subagents inherit it. An Opus
+5.5 or Sonnet 5.5 entry session plus the Fable advisor keeps routine turns on
+the cheaper model. Each advisor call reads the caller's full context at Fable
+rates. The [Claude-native guide](.agents/rules/claude-native.md) covers
+resolution order, pairing limits, variables that disable the advisor, and
+runtime verification.
 
 ## Task completion
 
@@ -241,10 +293,13 @@ cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
 cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
 cp scripts/claude-task.sh /path/to/repo/scripts/sonnet-task
+cp scripts/claude-task.sh /path/to/repo/scripts/haiku-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
   /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
   /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task \
-  /path/to/repo/scripts/sonnet-task
+  /path/to/repo/scripts/sonnet-task /path/to/repo/scripts/haiku-task
+mkdir -p /path/to/repo/.claude/agents
+cp .claude/agents/*.md /path/to/repo/.claude/agents/
 ```
 
 Add stack, architecture, conventions, and exact verification commands under
