@@ -6,7 +6,16 @@ script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repo_dir="$(dirname "$script_dir")"
 agents_dir="$repo_dir/.agents"
 codex_dir="$HOME/.codex"
-claude_dir="$HOME/.claude"
+# Claude Code reads its user configuration from CLAUDE_CONFIG_DIR when set.
+claude_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+case "$claude_dir" in
+  /*) ;;
+  *)
+    printf '%s\n' \
+      'CLAUDE_CONFIG_DIR must be an absolute path; no files were changed.' >&2
+    exit 64
+    ;;
+esac
 claude_agents_dir="$claude_dir/agents"
 local_bin_dir="$HOME/.local/bin"
 installed_rules_dir="$codex_dir/rules"

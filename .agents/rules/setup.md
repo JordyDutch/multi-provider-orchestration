@@ -19,6 +19,8 @@ review, task, and refresh helpers under `~/.local/bin`, and adds exactly one
 Claude-only instructions and unrelated agents, backs up differing installed
 files, and verifies all copies byte-for-byte. Claude Code reloads changed
 agent types; restart a session that started before `~/.claude/agents/` existed.
+When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path
+instead of `~/.claude`; a relative path stops the installer before any write.
 
 Fresh-shell verification must resolve every helper to its installed path.
 Missing or shadowed helpers and shell failures return status 5 after files are

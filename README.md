@@ -74,6 +74,9 @@ The installer:
   `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
+- writes the Claude files under `CLAUDE_CONFIG_DIR` instead of `~/.claude`
+  when that variable is set, and stops before any write if it is not an
+  absolute path;
 - backs up differing installed files and verifies every copy byte-for-byte.
 
 After installation, Codex loads the compact global baseline and then only the

@@ -4,6 +4,8 @@ set -eu
 
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
+# Test installs must stay inside their temporary HOME.
+unset CLAUDE_CONFIG_DIR
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repo_dir="$(dirname "$script_dir")"
@@ -117,6 +119,8 @@ grep -qF 'omit the Agent tool'"'"'s `model`' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF 'There is no per-agent switch' \
   "$repo_dir/.agents/rules/claude-native.md"
+grep -qF 'When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path' \
+  "$repo_dir/.agents/rules/setup.md"
 grep -qF '`--advisor` attaches the pinned Fable 5.1 advisor' \
   "$repo_dir/.agents/rules/delegation.md"
 
@@ -297,6 +301,30 @@ for source_agent in "$repo_dir"/.claude/agents/*.md; do
   cmp -s "$source_agent" "$fresh_home/.claude/agents/$agent_file"
 done
 test ! -e "$fresh_home/.codex/playbooks"
+
+# CLAUDE_CONFIG_DIR relocates every Claude file the installer writes.
+config_home="$test_home/config-home"
+config_dir="$config_home/claude-work"
+HOME="$config_home" CLAUDE_CONFIG_DIR="$config_dir" SHELL="$test_shell" \
+  "$repo_dir/scripts/install-global.sh" >/dev/null
+for source_agent in "$repo_dir"/.claude/agents/*.md; do
+  agent_file="$(basename "$source_agent")"
+  cmp -s "$source_agent" "$config_dir/agents/$agent_file"
+done
+test "$(grep -c -xF '@~/.codex/AGENTS.md' "$config_dir/CLAUDE.md")" -eq 1
+test ! -e "$config_home/.claude"
+cmp -s "$repo_dir/.agents/AGENTS.md" "$config_home/.codex/AGENTS.md"
+
+# A relative CLAUDE_CONFIG_DIR is rejected before any file is written.
+relative_home="$test_home/relative-home"
+relative_status=0
+HOME="$relative_home" CLAUDE_CONFIG_DIR=relative-claude SHELL="$test_shell" \
+  "$repo_dir/scripts/install-global.sh" \
+  >"$test_home/relative.stdout" 2>"$test_home/relative.stderr" || relative_status=$?
+test "$relative_status" -eq 64
+grep -qF 'CLAUDE_CONFIG_DIR must be an absolute path' "$test_home/relative.stderr"
+test ! -e "$relative_home"
+test ! -e relative-claude
 
 # An incomplete checkout without agent definitions must fail the install.
 no_agents_repo="$test_home/no-agents-repo"

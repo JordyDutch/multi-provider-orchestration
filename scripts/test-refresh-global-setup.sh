@@ -3,6 +3,8 @@
 set -eu
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_NOSYSTEM=1
+# Test installs must stay inside their temporary HOME.
+unset CLAUDE_CONFIG_DIR
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 test_dir="$(mktemp -d "${TMPDIR:-/tmp}/test-setup-refresh.XXXXXX")"

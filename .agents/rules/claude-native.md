@@ -22,7 +22,8 @@ and [model aliases](https://code.claude.com/docs/en/model-config#model-aliases).
 ## Pinned agent types
 
 The installer copies these definitions from `.claude/agents/` to
-`~/.claude/agents/`. Claude Code reloads changed definitions within seconds;
+`~/.claude/agents/`, or to `$CLAUDE_CONFIG_DIR/agents/` when that variable is
+set. Claude Code reloads changed definitions within seconds;
 restart a session that started before that directory existed.
 
 | Agent type | Model and effort | Use |

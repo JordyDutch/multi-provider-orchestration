@@ -55,7 +55,8 @@ if [ "$advisor" != off ]; then
   # Name only the variable; its value is never printed.
   for advisor_var in \
     CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
-    CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
+    CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
+    CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
     eval "advisor_value=\${$advisor_var-}"
     # Claude Code reads these as booleans: 0, false, no, and off in any casing.
     case "$(printf '%s' "$advisor_value" | tr '[:upper:]' '[:lower:]')" in

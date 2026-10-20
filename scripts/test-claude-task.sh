@@ -13,7 +13,8 @@ trap 'exit 143' TERM
 
 # A developer's environment must not gate --advisor inside the suite.
 unset CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
-  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
+  CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
   DISABLE_TELEMETRY CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
 
 mkdir -p "$test_dir/bin" "$test_dir/work dir"
@@ -195,7 +196,8 @@ grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
 grep -qF 'advisor=claude-fable-5-1 (not distinguishable)' "$test_dir/err"
 # Boolean off values, in any casing, do not disable the advisor.
 for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
-  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
+  CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
   for off_value in 0 FALSE No off; do
     (
       export "$advisor_var=$off_value"
@@ -270,7 +272,8 @@ grep -qF 'lacks --settings' "$test_dir/err"
 expect_no_inference "$test_dir/bin/haiku-task" --advisor=x "$test_dir/work dir" "$test_dir/brief"
 grep -qF 'unknown option: --advisor=x' "$test_dir/err"
 for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
-  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
+  CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
   DISABLE_TELEMETRY CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC; do
   (
     export "$advisor_var=yes-hidden-value"
