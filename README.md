@@ -74,6 +74,11 @@ The installer:
   `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
+- pins `"advisorModel": "claude-fable-5-1"` in `~/.claude/settings.json` and
+  replaces a bare `model` alias (`opus`, `sonnet`, `haiku`, or `fable`) with
+  its exact ID, keeping every other setting, the file mode, and a symlinked
+  file; before any write, settings that are not one JSON object return 65,
+  missing `jq` returns 69, and an unpinned read-only file or directory returns 73;
 - writes the Claude files under `CLAUDE_CONFIG_DIR` instead of `~/.claude`
   when that variable is set, and stops before any write if it is not an
   absolute path;
@@ -249,8 +254,8 @@ An Opus or Sonnet session still switches to Fable 5.1 for work the routing
 guide assigns to the Fable owner.
 
 The [advisor](https://code.claude.com/docs/en/advisor) lets the working model
-consult a stronger model at decision points. Pin Fable 5.1 once in
-`~/.claude/settings.json`; the installer does not edit that file:
+consult a stronger model at decision points. The installer pins Fable 5.1 in
+`~/.claude/settings.json` and restores it whenever the installer runs again:
 
 ```json
 { "advisorModel": "claude-fable-5-1" }

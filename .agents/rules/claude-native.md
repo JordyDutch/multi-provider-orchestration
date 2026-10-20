@@ -45,14 +45,15 @@ Haiku miscounted lines in a probe; route counts and totals to a command.
 ## Advisor
 
 The advisor lets the calling model consult a stronger model at decision points,
-with the full conversation. Pin it in `~/.claude/settings.json`:
+with the full conversation. The installer pins it in
+`~/.claude/settings.json`:
 
 ```json
 { "advisorModel": "claude-fable-5-1" }
 ```
 
-`/advisor fable` saves the alias instead; run `/advisor claude-fable-5-1` or
-edit the setting to keep the pin. An advisor must rank at or above the model
+`/advisor fable` saves the alias instead; the next installer run, such as the
+next day's refresh, restores the pin, as does `/advisor claude-fable-5-1`. An advisor must rank at or above the model
 calling it. Fable 5.1 qualifies for every Claude main model; a Fable-led
 session can only pair it with itself. See
 [advisor pairings](https://code.claude.com/docs/en/advisor#choose-an-advisor-model).

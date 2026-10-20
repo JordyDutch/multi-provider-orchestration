@@ -123,6 +123,16 @@ grep -qF 'There is no per-agent switch' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF 'When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path' \
   "$repo_dir/.agents/rules/setup.md"
+grep -qF 'The installer sets `advisorModel` to `claude-fable-5-1` in' \
+  "$repo_dir/.agents/rules/setup.md"
+grep -qF 'The installer pins it in' "$repo_dir/.agents/rules/claude-native.md"
+grep -qF 'pins `"advisorModel": "claude-fable-5-1"` in `~/.claude/settings.json`' \
+  "$repo_dir/README.md"
+if grep -qF 'never edits `~/.claude/settings.json`' "$repo_dir/.agents/rules/setup.md" || \
+  grep -qF 'the installer does not edit that file' "$repo_dir/README.md"; then
+  printf '%s\n' "Docs must describe the installer's settings pin." >&2
+  exit 1
+fi
 grep -qF 'then runs a local `/advisor` check under the same restricted' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF '`--advisor` attaches the pinned Fable 5.1 advisor' \
@@ -212,6 +222,9 @@ printf '%s\n' 'Keep local guidance.' >"$test_home/.codex/rules/local.md"
 printf '%s\n' 'prefix_rule(pattern=["example-command"], decision="prompt")' \
   >"$test_home/original-default.rules"
 cp "$test_home/original-default.rules" "$test_home/.codex/rules/default.rules"
+printf '%s\n' '{"model":"opus","advisorModel":"fable","permissions":{"allow":["Bash(ls)"]}}' \
+  >"$test_home/.claude/settings.json"
+chmod 600 "$test_home/.claude/settings.json"
 test_shell="$test_home/test-shell"
 cat >"$test_shell" <<'EOF'
 #!/bin/sh
@@ -285,6 +298,19 @@ test "$(grep -c -xF '@~/.codex/AGENTS.md' \
   "$test_home/.claude/CLAUDE.md")" -eq 1
 grep -qF "Keep this Claude-only instruction." \
   "$test_home/.claude/CLAUDE.md"
+# Settings keep unrelated keys and their mode; bare aliases become exact IDs.
+set -- "$test_home/.claude/settings.json.backup."*
+test "$#" -eq 1
+jq -e '.advisorModel == "fable" and .model == "opus"' "$1" >/dev/null
+jq -e '. == {
+  model: "claude-opus-5-5",
+  advisorModel: "claude-fable-5-1",
+  permissions: {allow: ["Bash(ls)"]}
+}' "$test_home/.claude/settings.json" >/dev/null
+test "$(find "$test_home/.claude/settings.json" -perm 600 -print)" = \
+  "$test_home/.claude/settings.json"
+set -- "$test_home/.claude/.settings.json."*
+test ! -e "$1"
 
 # A clean machine needs the same complete instruction tree as an upgrade.
 fresh_home="$test_home/fresh-home"
@@ -305,6 +331,145 @@ for source_agent in "$repo_dir"/.claude/agents/*.md; do
   cmp -s "$source_agent" "$fresh_home/.claude/agents/$agent_file"
 done
 test ! -e "$fresh_home/.codex/playbooks"
+jq -e '. == {advisorModel: "claude-fable-5-1"}' \
+  "$fresh_home/.claude/settings.json" >/dev/null
+
+# Pinned settings stay byte-identical; other model values are the user's choice.
+pinned_home="$test_home/pinned-home"
+mkdir -p "$pinned_home/.claude"
+printf '%s\n' '{"advisorModel":"claude-fable-5-1","model":"opusplan"}' \
+  >"$pinned_home/.claude/settings.json"
+cp "$pinned_home/.claude/settings.json" "$test_home/pinned-settings.json"
+HOME="$pinned_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+cmp -s "$test_home/pinned-settings.json" "$pinned_home/.claude/settings.json"
+set -- "$pinned_home/.claude/settings.json.backup."*
+test ! -e "$1"
+
+# A symlinked settings file is updated through the link, not replaced.
+linked_home="$test_home/linked-home"
+mkdir -p "$linked_home/.claude" "$linked_home/dotfiles"
+printf '%s\n' '{"theme":"dark","model":"sonnet"}' >"$linked_home/dotfiles/settings.json"
+ln -s ../dotfiles/settings.json "$linked_home/.claude/settings.json"
+HOME="$linked_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+test -L "$linked_home/.claude/settings.json"
+test "$(readlink "$linked_home/.claude/settings.json")" = ../dotfiles/settings.json
+jq -e '. == {theme: "dark", model: "claude-sonnet-5-5", advisorModel: "claude-fable-5-1"}' \
+  "$linked_home/dotfiles/settings.json" >/dev/null
+set -- "$linked_home/dotfiles/.settings.json."*
+test ! -e "$1"
+
+# Each bare alias maps to its exact ID.
+for model_pin in haiku:claude-haiku-5-5 fable:claude-fable-5-1; do
+  alias_home="$test_home/alias-home-${model_pin%%:*}"
+  mkdir -p "$alias_home/.claude"
+  printf '{"model":"%s"}\n' "${model_pin%%:*}" >"$alias_home/.claude/settings.json"
+  HOME="$alias_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+  jq -e --arg model "${model_pin#*:}" \
+    '. == {model: $model, advisorModel: "claude-fable-5-1"}' \
+    "$alias_home/.claude/settings.json" >/dev/null
+done
+
+# A failed settings transformation keeps the original file and removes the
+# temporary copy.
+failing_jq_bin="$test_home/failing-jq-bin"
+mkdir -p "$failing_jq_bin"
+real_jq="$(command -v jq)"
+{
+  printf '%s\n' '#!/bin/sh' 'if [ "$1" = --arg ]; then' \
+    "  printf '{\"partial\":'" '  exit 5' 'fi'
+  printf 'exec %s "$@"\n' "$real_jq"
+} >"$failing_jq_bin/jq"
+chmod +x "$failing_jq_bin/jq"
+failing_home="$test_home/failing-settings-home"
+mkdir -p "$failing_home/.claude"
+printf '%s\n' '{"advisorModel":"fable"}' >"$failing_home/.claude/settings.json"
+failing_status=0
+PATH="$failing_jq_bin:$PATH" HOME="$failing_home" SHELL="$test_shell" \
+  "$repo_dir/scripts/install-global.sh" >/dev/null 2>&1 || failing_status=$?
+test "$failing_status" -eq 5
+test "$(cat "$failing_home/.claude/settings.json")" = '{"advisorModel":"fable"}'
+set -- "$failing_home/.claude/.settings.json."*
+test ! -e "$1"
+
+# Without jq the installer stops before any write.
+no_jq_bin="$test_home/no-jq-bin"
+mkdir -p "$no_jq_bin"
+for utility in sh dirname basename cat cmp cp date grep install mkdir mktemp mv readlink rm touch; do
+  ln -s "$(PATH=/usr/bin:/bin command -v "$utility")" "$no_jq_bin/$utility"
+done
+no_jq_home="$test_home/no-jq-home"
+no_jq_status=0
+PATH="$no_jq_bin" HOME="$no_jq_home" SHELL="$test_shell" \
+  /bin/sh "$repo_dir/scripts/install-global.sh" \
+  >/dev/null 2>"$test_home/no-jq.stderr" || no_jq_status=$?
+test "$no_jq_status" -eq 69
+grep -qF 'Install jq to pin the Claude settings; no files were changed.' \
+  "$test_home/no-jq.stderr"
+test ! -e "$no_jq_home"
+
+# Read-only settings stop the install before any write unless already pinned.
+if [ "$(id -u)" -ne 0 ]; then
+  readonly_home="$test_home/readonly-home"
+  mkdir -p "$readonly_home/.claude"
+  printf '%s\n' '{"advisorModel":"fable"}' >"$readonly_home/.claude/settings.json"
+  chmod 400 "$readonly_home/.claude/settings.json"
+  readonly_status=0
+  HOME="$readonly_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" \
+    >/dev/null 2>"$test_home/readonly.stderr" || readonly_status=$?
+  test "$readonly_status" -eq 73
+  grep -qF 'or its directory is read-only; make it writable or set "advisorModel": "claude-fable-5-1" there. No files were changed.' \
+    "$test_home/readonly.stderr"
+  test "$(cat "$readonly_home/.claude/settings.json")" = '{"advisorModel":"fable"}'
+  test ! -e "$readonly_home/.codex"
+  chmod 600 "$readonly_home/.claude/settings.json"
+  printf '%s\n' '{"advisorModel":"claude-fable-5-1"}' >"$readonly_home/.claude/settings.json"
+  chmod 400 "$readonly_home/.claude/settings.json"
+  HOME="$readonly_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+  chmod 600 "$readonly_home/.claude/settings.json"
+
+  # A missing file in a read-only settings directory also stops before writes.
+  readonly_dir_home="$test_home/readonly-dir-home"
+  mkdir -p "$readonly_dir_home/.claude/agents"
+  chmod 500 "$readonly_dir_home/.claude"
+  readonly_dir_status=0
+  HOME="$readonly_dir_home" SHELL="$test_shell" \
+    "$repo_dir/scripts/install-global.sh" \
+    >/dev/null 2>&1 || readonly_dir_status=$?
+  chmod 700 "$readonly_dir_home/.claude"
+  test "$readonly_dir_status" -eq 73
+  test ! -e "$readonly_dir_home/.codex"
+  test ! -e "$readonly_dir_home/.claude/settings.json"
+fi
+
+# A dangling settings symlink stops the install before any write.
+dangling_home="$test_home/dangling-home"
+mkdir -p "$dangling_home/.claude"
+ln -s ../missing/settings.json "$dangling_home/.claude/settings.json"
+dangling_status=0
+HOME="$dangling_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" \
+  >/dev/null 2>&1 || dangling_status=$?
+test "$dangling_status" -eq 65
+test ! -e "$dangling_home/.codex"
+
+# Settings that are not a JSON object stop the install before any write.
+for invalid_settings in '{"advisorModel":' '["claude-fable-5-1"]' \
+  '[] {"keep":true}' '{"a":1} {"b":2}' ''; do
+  invalid_home="$test_home/invalid-settings-home"
+  rm -rf "$invalid_home"
+  mkdir -p "$invalid_home/.claude"
+  printf '%s\n' "$invalid_settings" >"$invalid_home/.claude/settings.json"
+  invalid_status=0
+  HOME="$invalid_home" SHELL="$test_shell" \
+    "$repo_dir/scripts/install-global.sh" \
+    >"$test_home/invalid-settings.stdout" \
+    2>"$test_home/invalid-settings.stderr" || invalid_status=$?
+  test "$invalid_status" -eq 65
+  grep -qF 'is not a JSON object; fix it and rerun. No files were changed.' \
+    "$test_home/invalid-settings.stderr"
+  test "$(cat "$invalid_home/.claude/settings.json")" = "$invalid_settings"
+  test ! -e "$invalid_home/.codex"
+  test ! -e "$invalid_home/.claude/agents"
+done
 
 # CLAUDE_CONFIG_DIR relocates every Claude file the installer writes.
 config_home="$test_home/config-home"
@@ -316,6 +481,7 @@ for source_agent in "$repo_dir"/.claude/agents/*.md; do
   cmp -s "$source_agent" "$config_dir/agents/$agent_file"
 done
 test "$(grep -c -xF '@~/.codex/AGENTS.md' "$config_dir/CLAUDE.md")" -eq 1
+jq -e '.advisorModel == "claude-fable-5-1"' "$config_dir/settings.json" >/dev/null
 test ! -e "$config_home/.claude"
 cmp -s "$repo_dir/.agents/AGENTS.md" "$config_home/.codex/AGENTS.md"
 
