@@ -12,11 +12,13 @@ From the cloned checkout, run:
 ```
 
 The installer copies the canonical baseline and router from `.agents/` into
-`~/.codex`, copies `.agents/rules/` into `~/.codex/rules/`, installs the
+`~/.codex`, copies `.agents/rules/` into `~/.codex/rules/`, copies the pinned
+Claude agent types from `.claude/agents/` into `~/.claude/agents/`, installs the
 review, task, and refresh helpers under `~/.local/bin`, and adds exactly one
 `@~/.codex/AGENTS.md` import to `~/.claude/CLAUDE.md`. It preserves existing
-Claude-only instructions, backs up differing installed files, and verifies all
-copies byte-for-byte.
+Claude-only instructions and unrelated agents, backs up differing installed
+files, and verifies all copies byte-for-byte. Claude Code reloads changed
+agent types; restart a session that started before `~/.claude/agents/` existed.
 
 Fresh-shell verification must resolve every helper to its installed path.
 Missing or shadowed helpers and shell failures return status 5 after files are
@@ -63,10 +65,13 @@ cp scripts/sol-review.sh /path/to/repo/scripts/astra-review
 cp scripts/claude-task.sh /path/to/repo/scripts/opus-task
 cp scripts/claude-task.sh /path/to/repo/scripts/fable-task
 cp scripts/claude-task.sh /path/to/repo/scripts/sonnet-task
+cp scripts/claude-task.sh /path/to/repo/scripts/haiku-task
 chmod +x /path/to/repo/scripts/claude-review.sh \
   /path/to/repo/scripts/sol-review.sh /path/to/repo/scripts/astra-review \
   /path/to/repo/scripts/opus-task /path/to/repo/scripts/fable-task \
-  /path/to/repo/scripts/sonnet-task
+  /path/to/repo/scripts/sonnet-task /path/to/repo/scripts/haiku-task
+mkdir -p /path/to/repo/.claude/agents
+cp .claude/agents/*.md /path/to/repo/.claude/agents/
 ```
 
 Add repository-specific rules under `## This repo` in the destination root
@@ -92,13 +97,13 @@ Sol handles bounded and complex execution and regular reviews; Luna handles
 mechanical work. Astra can assign Opus frontend/UX or implementation and involve
 Fable early for architecture input, difficult diagnosis, or complex execution
 while retaining ownership. Fable owns direct Claude-led entry sessions and can
-assign suitable Sol, Luna, Sonnet, or Opus scopes. Launch routes live in
+assign suitable Sol, Luna, Haiku, Sonnet, or Opus scopes. Launch routes live in
 [delegation.md](delegation.md).
 
-The installer adds `opus-task`, `fable-task`, and `sonnet-task` for scoped Claude
-assignments, alongside the independent review helpers. It does not change
-`config.toml`, existing tasks, or other machines. The model picker or explicit
-CLI model selects the entry session. For a worker, select its live-verified
+The installer adds `opus-task`, `fable-task`, `sonnet-task`, and `haiku-task`
+for scoped Claude assignments, alongside the independent review helpers. It
+does not change `config.toml`, existing tasks, or other machines. The model
+picker or explicit CLI model selects the entry session. For a worker, select its live-verified
 model and effort in the actual spawn; instructions alone cannot switch models.
 There is no automatic dispatch or cost guarantee. Smaller models may use more
 tokens if context or repeated work grows; keep hand-offs compact. The task helpers
@@ -107,3 +112,11 @@ plus `jq`. They use the existing subscription login and fail closed when a
 required capability is missing. Their default is read-only; `--edit` enables
 file edits in the assigned working directory, with tests and Git left to the
 entry owner.
+
+The installer never edits `~/.claude/settings.json`. For Claude-led sessions,
+set the advisor there once, as described in
+[claude-native.md](claude-native.md):
+
+```json
+{ "advisorModel": "claude-fable-5-1" }
+```

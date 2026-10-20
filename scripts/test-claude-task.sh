@@ -11,13 +11,19 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+# A developer's environment must not gate --advisor inside the suite.
+unset CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
+  DISABLE_TELEMETRY CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+
 mkdir -p "$test_dir/bin" "$test_dir/work dir"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/opus-task"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/fable-task"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/sonnet-task"
+cp "$script_dir/claude-task.sh" "$test_dir/bin/haiku-task"
 cp "$script_dir/claude-task.sh" "$test_dir/bin/unknown-task"
 chmod +x "$test_dir/bin/opus-task" "$test_dir/bin/fable-task" \
-  "$test_dir/bin/sonnet-task" "$test_dir/bin/unknown-task"
+  "$test_dir/bin/sonnet-task" "$test_dir/bin/haiku-task" "$test_dir/bin/unknown-task"
 cat >"$test_dir/bin/claude" <<'EOF'
 #!/bin/sh
 case "$1" in
@@ -33,7 +39,11 @@ case "$1" in
     if [ "${FAKE_SHORT_HELP:-no}" = yes ]; then
       printf '%s\n' '--print --model --effort'
     else
-      printf '%s\n' '--print --model --effort --restricted --tools --permission-mode --permission-prompts --strict-mcp-config --disable-slash-commands --no-session-persistence --output-format --exclude-dynamic-system-prompt-sections'
+      printf '%s' '--print --model --effort --restricted --tools --permission-mode --permission-prompts --strict-mcp-config --disable-slash-commands --no-session-persistence --output-format --exclude-dynamic-system-prompt-sections'
+      if [ "${FAKE_NO_SETTINGS:-no}" != yes ]; then
+        printf '%s' ' --settings'
+      fi
+      printf '\n'
     fi
     exit 0
     ;;
@@ -59,6 +69,8 @@ printf 'Edit only src/example.txt. Literal shell text: $(touch %s/injection) and
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{}},"result":"Changed src/example.txt"}' >"$test_dir/opus.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-fable-5-1":{}},"result":"Fable result"}' >"$test_dir/fable.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5-5":{}},"result":"Sonnet result"}' >"$test_dir/sonnet.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{}},"result":"Haiku result"}' >"$test_dir/haiku.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-fable-5-1":{}},"result":"Haiku advised result"}' >"$test_dir/advisor.json"
 
 export PATH="$test_dir/bin:/usr/bin:/bin"
 export CAPTURE_ARGS="$test_dir/args"
@@ -76,7 +88,15 @@ grep -qxF 'high' "$test_dir/args"
 grep -qxF 'dontAsk' "$test_dir/args"
 grep -qxF 'Read,Grep,Glob' "$test_dir/args"
 grep -qxF 'none' "$test_dir/args"
-grep -qF 'model=claude-opus-5-5 effort=high mode=read-only' "$test_dir/err"
+grep -qF 'model=claude-opus-5-5 effort=high mode=read-only advisor=off' "$test_dir/err"
+if grep -qxF -- '--settings' "$test_dir/args" || grep -qF 'advisorModel' "$test_dir/args"; then
+  printf '%s\n' 'Advisor settings were passed without --advisor.' >&2
+  exit 1
+fi
+if grep -qF 'advisor tool' "$test_dir/stdin"; then
+  printf '%s\n' 'Advisor prompt line was added without --advisor.' >&2
+  exit 1
+fi
 printf '%s\n' 'Owner: Fable. Worker: Opus. Return decisions to Fable.' \
   >"$test_dir/fable-owner-brief"
 "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/fable-owner-brief" \
@@ -127,6 +147,74 @@ grep -qxF 'medium' "$test_dir/args"
 grep -qxF 'acceptEdits' "$test_dir/args"
 grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
 grep -qF 'model=claude-sonnet-5-5 effort=medium mode=edit' "$test_dir/err"
+FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Haiku result' "$test_dir/out"
+grep -qxF 'claude-haiku-5-5' "$test_dir/args"
+grep -qxF 'low' "$test_dir/args"
+grep -qxF 'dontAsk' "$test_dir/args"
+grep -qxF 'Read,Grep,Glob' "$test_dir/args"
+grep -qF 'model=claude-haiku-5-5 effort=low mode=read-only advisor=off' "$test_dir/err"
+grep -qF 'Claude task completed: model=claude-haiku-5-5 effort=low mode=read-only advisor=off' "$test_dir/err"
+if grep -qxF -- '--settings' "$test_dir/args" || grep -qF 'advisorModel' "$test_dir/args"; then
+  printf '%s\n' 'Haiku run passed advisor settings without --advisor.' >&2
+  exit 1
+fi
+if grep -qF 'advisor tool' "$test_dir/stdin"; then
+  printf '%s\n' 'Haiku prompt carried an advisor line without --advisor.' >&2
+  exit 1
+fi
+FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" --edit --effort medium \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Haiku result' "$test_dir/out"
+grep -qxF 'claude-haiku-5-5' "$test_dir/args"
+grep -qxF 'medium' "$test_dir/args"
+grep -qxF 'acceptEdits' "$test_dir/args"
+grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
+grep -qF 'model=claude-haiku-5-5 effort=medium mode=edit advisor=off' "$test_dir/err"
+FAKE_RESULT="$test_dir/advisor.json" "$test_dir/bin/haiku-task" --advisor \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Haiku advised result' "$test_dir/out"
+grep -qxF 'claude-haiku-5-5' "$test_dir/args"
+grep -qxF -- '--settings' "$test_dir/args"
+grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
+grep -qF 'An advisor tool backed by a stronger model is available.' "$test_dir/stdin"
+grep -qF 'before reporting completion.' "$test_dir/stdin"
+grep -qF 'Literal shell text:' "$test_dir/stdin"
+grep -qF 'model=claude-haiku-5-5 effort=low mode=read-only advisor=claude-fable-5-1' "$test_dir/err"
+grep -qF 'advisor=claude-fable-5-1 (called)' "$test_dir/err"
+FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" --advisor \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Haiku result' "$test_dir/out"
+grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
+grep -qF 'advisor=claude-fable-5-1 (not called)' "$test_dir/err"
+FAKE_RESULT="$test_dir/fable.json" "$test_dir/bin/fable-task" --advisor \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+grep -qxF 'Fable result' "$test_dir/out"
+grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
+grep -qF 'advisor=claude-fable-5-1 (not distinguishable)' "$test_dir/err"
+# Boolean off values, in any casing, do not disable the advisor.
+for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY; do
+  for off_value in 0 FALSE No off; do
+    (
+      export "$advisor_var=$off_value"
+      FAKE_RESULT="$test_dir/advisor.json" \
+        "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief" \
+        >"$test_dir/out" 2>"$test_dir/err"
+    )
+    grep -qxF 'Haiku advised result' "$test_dir/out"
+    grep -qF 'advisor=claude-fable-5-1 (called)' "$test_dir/err"
+  done
+done
+(DISABLE_TELEMETRY=1 FAKE_RESULT="$test_dir/haiku.json" \
+  "$test_dir/bin/haiku-task" "$test_dir/work dir" "$test_dir/brief" \
+  >"$test_dir/out" 2>"$test_dir/err")
+grep -qxF 'Haiku result' "$test_dir/out"
+(FAKE_NO_SETTINGS=yes FAKE_RESULT="$test_dir/haiku.json" \
+  "$test_dir/bin/haiku-task" "$test_dir/work dir" "$test_dir/brief" \
+  >"$test_dir/out" 2>"$test_dir/err")
+grep -qxF 'Haiku result' "$test_dir/out"
 "$test_dir/bin/opus-task" --read-only --effort low \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'low' "$test_dir/args"
@@ -177,6 +265,28 @@ if grep -qF 'must never print' "$test_dir/err"; then
 fi
 (FAKE_SHORT_HELP=yes expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief")
 grep -qF 'lacks --restricted' "$test_dir/err"
+(FAKE_NO_SETTINGS=yes expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF 'lacks --settings' "$test_dir/err"
+expect_no_inference "$test_dir/bin/haiku-task" --advisor=x "$test_dir/work dir" "$test_dir/brief"
+grep -qF 'unknown option: --advisor=x' "$test_dir/err"
+for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
+  CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_VERTEX CLAUDE_CODE_USE_FOUNDRY \
+  DISABLE_TELEMETRY CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC; do
+  (
+    export "$advisor_var=yes-hidden-value"
+    expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief"
+  )
+  grep -qF "$advisor_var" "$test_dir/err"
+  grep -qF 'unavailable' "$test_dir/err"
+  if grep -qF 'yes-hidden-value' "$test_dir/err"; then
+    printf 'Advisor gating leaked the value of %s.\n' "$advisor_var" >&2
+    exit 1
+  fi
+done
+(DISABLE_TELEMETRY=0 expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF 'DISABLE_TELEMETRY' "$test_dir/err"
+(CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=false expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' "$test_dir/err"
 
 # Keep basic utilities available while deliberately hiding jq.
 mkdir -p "$test_dir/no-jq"
@@ -187,9 +297,13 @@ done
 grep -qF 'jq is required' "$test_dir/err"
 
 expect_bad_result() {
-  result_helper="${1:-opus-task}"
+  result_helper=opus-task
+  if [ "$#" -gt 0 ]; then
+    result_helper="$1"
+    shift
+  fi
   rm -f "$CAPTURE_ARGS"
-  if "$test_dir/bin/$result_helper" "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"; then
+  if "$test_dir/bin/$result_helper" "$@" "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"; then
     printf '%s\n' 'Expected provider result rejection.' >&2
     exit 1
   fi
@@ -238,6 +352,22 @@ if grep -qF 'older Sonnet' "$test_dir/err"; then
   exit 1
 fi
 (FAKE_RESULT="$test_dir/opus.json" expect_bad_result sonnet-task)
+grep -qF '"modelUsage_keys":["claude-opus-5-5"]' "$test_dir/err"
+
+# Advisor usage is accepted only when --advisor was requested, and only Fable.
+(FAKE_RESULT="$test_dir/advisor.json" expect_bad_result haiku-task)
+grep -qF '"modelUsage_keys":["claude-fable-5-1","claude-haiku-5-5"]' "$test_dir/err"
+grep -qF 'advisor=off' "$test_dir/err"
+(FAKE_RESULT="$test_dir/fable.json" expect_bad_result haiku-task --advisor)
+grep -qF '"modelUsage_keys":["claude-fable-5-1"]' "$test_dir/err"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-sonnet-5-5":{}},"result":"wrong advisor"}' >"$test_dir/bad.json"
+(FAKE_RESULT="$test_dir/bad.json" expect_bad_result haiku-task --advisor)
+grep -qF '"modelUsage_keys":["claude-haiku-5-5","claude-sonnet-5-5"]' "$test_dir/err"
+if grep -qF 'wrong advisor' "$test_dir/err"; then
+  printf '%s\n' 'Unvalidated advisor result text leaked into diagnostics.' >&2
+  exit 1
+fi
+(FAKE_RESULT="$test_dir/opus.json" expect_bad_result haiku-task)
 grep -qF '"modelUsage_keys":["claude-opus-5-5"]' "$test_dir/err"
 
 rm -f "$CAPTURE_ARGS"

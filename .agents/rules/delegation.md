@@ -14,13 +14,14 @@ Do not launch every available model.
 | Assigned work | Worker | Execution route |
 | --- | --- | --- |
 | Implementation, tests, bounded analysis | Sol high for implementation, medium for bounded analysis, xhigh for difficult diagnosis | Native Codex worker; `codex exec` from Claude |
-| Mechanical extraction, inventory, transformations | Luna low/medium; Sonnet 5.5 low/medium for file-only work | Native Codex worker; `codex exec` from Claude; `sonnet-task` |
-| Frontend/UX or substantive implementation by fit | Opus high | `opus-task` |
-| Architecture input, difficult diagnosis, complex analysis or implementation | Fable high | `fable-task` |
+| Mechanical extraction, inventory, transformations | Luna low/medium; Haiku 5.5 low for read-only search; Sonnet 5.5 low/medium for edits | Native Codex worker; `codex exec` from Claude; `haiku-scout`, `sonnet-worker`, `haiku-task`, `sonnet-task` |
+| Frontend/UX or substantive implementation by fit | Opus high | `opus-worker` or `opus-task` |
+| Architecture input, difficult diagnosis, complex analysis or implementation | Fable high | `fable-specialist` or `fable-task` |
 
 Use Fable early for difficult scopes; a failed Sol or Opus run is not required.
-Astra can assign it directly. Either entry owner may choose Sol, Luna, Sonnet,
-or Opus by fit. Avoid duplicate work; review effort follows `reviews.md`.
+Either entry owner may choose any listed worker by fit. Avoid duplicate work;
+review effort follows `reviews.md`. Native Claude workers use the pinned agent
+types in [claude-native.md](claude-native.md).
 
 For native Codex workers, set both `model` and `reasoning_effort`; use
 `fork_turns: "none"` with a fresh brief when that interface supports it.
@@ -31,7 +32,7 @@ with the entry owner.
 ## Direct Claude to Codex
 
 Native Codex workers exist only inside Codex. From a direct Claude-led session,
-Fable can use the installed `codex exec` in host context. Run the compact live
+the Claude owner can use the installed `codex exec` in host context. Run the compact live
 catalog filter in [routing.md](routing.md) once before the first hand-off; do
 not dump the raw catalog. If the shell disallows a pipeline, redirect the
 catalog to a private temporary file and run `jq` separately.
@@ -45,15 +46,14 @@ codex exec --model gpt-6-luna -c 'model_reasoning_effort="low"' \
   < /path/to/brief.md
 ```
 
-Use Luna `medium` for batches and Sol `xhigh` for difficult diagnosis. Reviews
-use the helper selected by `reviews.md`; this CLI route is for delegated work
-only. For already-authorized local edits in isolated
-worktrees or non-overlapping paths, change `--sandbox` to `workspace-write`.
+Reviews use the helper selected by `reviews.md`; this CLI route is for delegated
+work only. For already-authorized local edits in isolated worktrees or
+non-overlapping paths, change `--sandbox` to `workspace-write`.
 The working directory is not a read boundary; keep the brief's read scope narrow.
 Do not use permission bypass or model fallback flags. Capture exit status and
 result; confirm model/effort from the startup banner and saved session
 `turn_context` metadata on the first meaningful run. Extract those fields only,
-not full transcripts. The Fable owner integrates results and required checks.
+not full transcripts. The Claude owner integrates results and required checks.
 
 ## Task brief
 
@@ -64,37 +64,38 @@ return changed files or findings, checks actually performed, blockers, and
 decisions for the calling owner. Do not send conversation transcripts,
 credentials, personal data, or unrelated repository material.
 
-Announce the selected model and scope once. Verify the runtime model and effort
-on its first meaningful task. A requested model name alone is not proof of use.
+Announce the selected model and scope once, then verify the runtime model and
+effort on its first meaningful task; a requested name is not proof of use.
 
 ## Claude task helpers
 
-Run these in host context so Claude can use its existing subscription login.
-The installer provides these helpers; they preflight authentication themselves.
-Each starts a fresh session from an explicit working directory and brief file:
+Run these installed helpers in host context so Claude uses its subscription
+login; they preflight authentication. Each starts a fresh session from an
+explicit working directory and brief file:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md
 fable-task --effort high /path/to/worktree /path/to/brief.md
 sonnet-task --effort medium /path/to/worktree /path/to/brief.md
+haiku-task --advisor /path/to/worktree /path/to/brief.md
 opus-task --edit /path/to/worktree /path/to/brief.md
 ```
 
-The conversation is fresh; Claude's built-in and user-level startup context can
-still load. The helpers do not copy the orchestrator's conversation history.
+Sessions carry no orchestrator history, though Claude's built-in and user-level
+startup context can still load.
 
 The default is read-only. Use `--edit` only for local edits already authorized
 by the task. Give parallel writers isolated worktrees or non-overlapping paths.
 Use a narrow working directory containing only the relevant repository context;
 named paths in the brief are instructions, not a file-level sandbox.
 
-The helpers pin `claude-opus-5-5`/high, `claude-fable-5-1`/high, or
-`claude-sonnet-5-5`/low (medium for batches). They expose file reading/searching,
-plus Edit/Write only in edit mode. Restricted mode confines file tools to the
-working directory. They expose no shell, MCP,
-or nested-agent tools. The entry owner runs the required tests and Git
-operations. This route supports code edits; assignments needing commands return
-to that owner.
+The helpers pin `claude-opus-5-5`/high, `claude-fable-5-1`/high,
+`claude-sonnet-5-5`/low (medium for batches), or `claude-haiku-5-5`/low.
+`--advisor` attaches the pinned Fable 5.1 advisor; see
+[claude-native.md](claude-native.md). They expose file reading/searching, plus
+Edit/Write only in edit mode. Restricted mode confines file tools to the
+working directory and exposes no shell, MCP, or nested-agent tools; tests, Git,
+and other commands stay with the entry owner.
 
 Helpers reject unsupported CLI capabilities, failed authentication, invalid
 briefs, provider errors, permission denials, and mismatched runtime model
@@ -103,9 +104,8 @@ result file and print its path for diagnosis. A failed editing task may have
 left partial changes: inspect the diff before recovery. Keep polling the
 same process while its response is buffered; do not launch duplicate tasks.
 
-Read-only task analysis is not a substitute for mandatory independent review.
-Use `claude-review`, `fable-review`, `sol-review`, or `astra-review` by authorship
-and risk, then integrate and verify without repeating the worker's work.
+Task analysis does not replace mandatory independent review; select it with
+`reviews.md`, then integrate and verify without repeating the worker's work.
 
 Official interfaces: [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 and [Claude CLI](https://code.claude.com/docs/en/cli-reference).

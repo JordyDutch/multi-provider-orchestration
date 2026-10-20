@@ -76,3 +76,31 @@ The first Sonnet attempt had been blocked by Claude's session limit before
 inference. The helper returned failure, retained private error evidence, and
 left its fixture unchanged. The successful retry followed the announced reset;
 the blocked attempt is excluded from model-quality comparisons.
+
+## Claude-native routing and advisor checks: 2026-10-20
+
+These checks used Claude Code 2.1.304 from an Opus 5.5 entry session whose user
+settings selected a Fable advisor.
+
+- Workflow `agent()` calls requesting `sonnet`, `haiku`, `claude-sonnet-5-5`,
+  and `claude-haiku-5-5` each reported the matching exact model ID from the
+  worker's own system prompt. Calls without a model ran on `claude-opus-5-5`.
+- The Agent tool's `model` parameter offered only aliases. The project had no
+  `.claude/agents/` directory when the session started, so a definition
+  written there later was unavailable. Claude Code documents this
+  new-directory exception and otherwise reloads changed definitions.
+- A project agent with `model: claude-haiku-5-5`, launched from a
+  `claude-sonnet-5-5` print session, produced `modelUsage` keys for both
+  models. The Haiku worker answered `4` when asked to count the lines of a
+  three-line file; route counts to a command.
+- A restricted Haiku 5.5 print run with
+  `--settings '{"advisorModel":"claude-fable-5-1"}'` returned `modelUsage`
+  keys `claude-haiku-5-5` and `claude-fable-5-1` and a `usage.iterations` entry
+  of type `advisor_message`. The single advisor call read 8,297 input tokens
+  for a trivial prompt, because it reads the whole context.
+- The repository `haiku-task` helper without `--advisor` reported no advisor
+  tool despite the user setting, confirming that restricted mode ignores it
+  (5.96 seconds). With `--advisor` it consulted Fable once and reported
+  `advisor=claude-fable-5-1 (called)` (14.93 seconds).
+
+These are capability checks, not quality, speed, or cost rankings.

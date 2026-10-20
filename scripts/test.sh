@@ -42,8 +42,10 @@ grep -qF 'earlier higher-level instruction explicitly states' \
   "$repo_dir/AGENTS.md"
 grep -qF 'read `.agents/AGENTS.md`' "$repo_dir/AGENTS.md"
 grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/.agents/AGENTS.md"
-grep -qF 'exact `claude-opus-5-5`' "$repo_dir/.agents/AGENTS.md"
+grep -qF 'Pin exact Claude IDs: `claude-opus-5-5`' "$repo_dir/.agents/AGENTS.md"
 grep -qF '`claude-fable-5-1`' "$repo_dir/.agents/AGENTS.md"
+grep -qF '`claude-haiku-5-5`' "$repo_dir/.agents/AGENTS.md"
+grep -qF 'rules/claude-native.md' "$repo_dir/.agents/AGENTS.md"
 grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Luna (`gpt-6-luna`) at `low`' \
@@ -52,7 +54,7 @@ grep -qF 'Sol (`gpt-6.1-sol`) at' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/.agents/AGENTS.md"
-grep -qF 'those specialists or live-verified Sonnet 5.5' \
+grep -qF 'those specialists or pinned Haiku and Sonnet agents' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'rules/routing.md' \
   "$repo_dir/.agents/AGENTS.md"
@@ -105,6 +107,54 @@ grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
+grep -qF '| Claude fast | Haiku 5.5 (`claude-haiku-5-5`) | `low` |' \
+  "$repo_dir/.agents/rules/routing.md"
+grep -qF '[claude-native.md](claude-native.md)' \
+  "$repo_dir/.agents/rules/routing.md"
+grep -qF '{ "advisorModel": "claude-fable-5-1" }' \
+  "$repo_dir/.agents/rules/claude-native.md"
+grep -qF 'omit the Agent tool'"'"'s `model`' \
+  "$repo_dir/.agents/rules/claude-native.md"
+grep -qF 'There is no per-agent switch' \
+  "$repo_dir/.agents/rules/claude-native.md"
+grep -qF '`--advisor` attaches the pinned Fable 5.1 advisor' \
+  "$repo_dir/.agents/rules/delegation.md"
+
+# Each Claude agent type pins one exact model and effort; aliases such as
+# `haiku` or `inherit` would silently follow the session or a newer release.
+set -- "$repo_dir"/.claude/agents/*.md
+test "$#" -eq 4
+worker_tools='Read, Grep, Glob, Edit, Write, Bash'
+for claude_agent in "$@"; do
+  agent_name="$(basename "$claude_agent" .md)"
+  case "$agent_name" in
+    haiku-scout) agent_model=claude-haiku-5-5 agent_effort=low agent_tools='Read, Grep, Glob' ;;
+    sonnet-worker) agent_model=claude-sonnet-5-5 agent_effort=medium agent_tools="$worker_tools" ;;
+    opus-worker) agent_model=claude-opus-5-5 agent_effort=high agent_tools="$worker_tools" ;;
+    fable-specialist) agent_model=claude-fable-5-1 agent_effort=high agent_tools="$worker_tools" ;;
+    *) printf 'Unexpected Claude agent definition: %s\n' "$claude_agent" >&2; exit 1 ;;
+  esac
+  # Check pins inside the frontmatter only, never in the prompt body.
+  test "$(sed -n 1p "$claude_agent")" = '---'
+  test "$(grep -c '^---$' "$claude_agent")" -eq 2
+  agent_frontmatter="$(awk 'NR > 1 && $0 == "---" { exit } NR > 1' "$claude_agent")"
+  for agent_key in name description tools model effort; do
+    test "$(printf '%s\n' "$agent_frontmatter" | grep -c "^$agent_key:")" -eq 1
+  done
+  printf '%s\n' "$agent_frontmatter" | grep -qxF "name: $agent_name"
+  printf '%s\n' "$agent_frontmatter" | grep -qx 'description: .*[^ ]'
+  printf '%s\n' "$agent_frontmatter" | grep -qxF "tools: $agent_tools"
+  printf '%s\n' "$agent_frontmatter" | grep -qxF "model: $agent_model"
+  printf '%s\n' "$agent_frontmatter" | grep -qxF "effort: $agent_effort"
+  grep -qF "at $agent_effort effort" "$claude_agent"
+  grep -qF 'calling owner keeps the plan' "$claude_agent"
+  grep -qF 'refresh global setup, or' "$claude_agent" ||
+    grep -qF 'Do not edit files or' "$claude_agent"
+  grep -qF "\`$agent_name\` | \`$agent_model\`, $agent_effort |" \
+    "$repo_dir/.agents/rules/claude-native.md"
+  grep -qF "\`$agent_name\` | \`$agent_model\`, $agent_effort |" "$repo_dir/README.md"
+done
+grep -qF 'medium-pinned `sonnet-worker`' "$repo_dir/.agents/rules/routing.md"
 grep -qF "Either entry owner may choose by fit and savings" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF "Claude is not limited to reviewing Codex. A hand-off never transfers ownership." \
@@ -135,13 +185,16 @@ grep -qF 'follow the implementation author, not the orchestrator' \
 grep -qF ".agents/AGENTS.md" "$repo_dir/.agents/rules/setup.md"
 grep -qF '(.agents/rules/routing.md)' "$repo_dir/README.md"
 grep -qF '(.agents/rules/reviews.md)' "$repo_dir/README.md"
-grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Sonnet, Opus, and Fable." \
+grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Haiku, Sonnet, Opus, and Fable." \
   "$repo_dir/README.md"
 grep -qF ".agents/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
 mkdir -p "$test_home/.claude" "$test_home/.codex/playbooks" \
   "$test_home/.codex/rules"
 printf '%s\n' "Keep this Claude-only instruction." >"$test_home/.claude/CLAUDE.md"
+mkdir -p "$test_home/.claude/agents"
+printf '%s\n' 'Previous scout.' >"$test_home/.claude/agents/haiku-scout.md"
+printf '%s\n' 'Keep local agent.' >"$test_home/.claude/agents/local-agent.md"
 # Exercise an upgrade as well as the second, idempotent install.
 printf '%s\n' 'Legacy baseline.' >"$test_home/.codex/AGENTS.md"
 printf '%s\n' 'Legacy router.' >"$test_home/.codex/ORCHESTRATION.md"
@@ -173,6 +226,10 @@ test "$#" -eq 1
 grep -qxF 'Previous routing.' "$1"
 grep -qxF 'Legacy routing.' "$test_home/.codex/playbooks/routing.md"
 grep -qxF 'Keep local guidance.' "$test_home/.codex/rules/local.md"
+set -- "$test_home/.claude/agents/haiku-scout.md.backup."*
+test "$#" -eq 1
+grep -qxF 'Previous scout.' "$1"
+grep -qxF 'Keep local agent.' "$test_home/.claude/agents/local-agent.md"
 cmp -s "$test_home/original-default.rules" "$test_home/.codex/rules/default.rules"
 for router_link in $router_links; do
   test -f "$test_home/.codex/$router_link"
@@ -188,13 +245,19 @@ for source_rule in "$repo_dir"/.agents/rules/*.md; do
     "$source_rule" \
     "$test_home/.codex/rules/$rule"
 done
+for source_agent in "$repo_dir"/.claude/agents/*.md; do
+  agent_file="$(basename "$source_agent")"
+  cmp -s "$source_agent" "$test_home/.claude/agents/$agent_file"
+  test "$(find "$test_home/.claude/agents/$agent_file" -perm 644 -print)" = \
+    "$test_home/.claude/agents/$agent_file"
+done
 cmp -s \
   "$repo_dir/scripts/claude-review.sh" \
   "$test_home/.local/bin/claude-review"
 cmp -s \
   "$repo_dir/scripts/claude-review.sh" \
   "$test_home/.local/bin/fable-review"
-for task_helper in opus-task fable-task sonnet-task; do
+for task_helper in opus-task fable-task sonnet-task haiku-task; do
   cmp -s \
     "$repo_dir/scripts/claude-task.sh" \
     "$test_home/.local/bin/$task_helper"
@@ -221,7 +284,7 @@ HOME="$fresh_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/d
 cmp -s "$repo_dir/.agents/AGENTS.md" "$fresh_home/.codex/AGENTS.md"
 cmp -s "$repo_dir/.agents/ORCHESTRATION.md" \
   "$fresh_home/.codex/ORCHESTRATION.md"
-for task_helper in opus-task fable-task sonnet-task; do
+for task_helper in opus-task fable-task sonnet-task haiku-task; do
   cmp -s \
     "$repo_dir/scripts/claude-task.sh" \
     "$fresh_home/.local/bin/$task_helper"
@@ -229,7 +292,24 @@ done
 for router_link in $router_links; do
   cmp -s "$repo_dir/.agents/$router_link" "$fresh_home/.codex/$router_link"
 done
+for source_agent in "$repo_dir"/.claude/agents/*.md; do
+  agent_file="$(basename "$source_agent")"
+  cmp -s "$source_agent" "$fresh_home/.claude/agents/$agent_file"
+done
 test ! -e "$fresh_home/.codex/playbooks"
+
+# An incomplete checkout without agent definitions must fail the install.
+no_agents_repo="$test_home/no-agents-repo"
+no_agents_home="$test_home/no-agents-home"
+mkdir -p "$no_agents_repo"
+cp -R "$repo_dir/scripts" "$repo_dir/.agents" "$no_agents_repo/"
+no_agents_status=0
+HOME="$no_agents_home" SHELL="$test_shell" \
+  "$no_agents_repo/scripts/install-global.sh" \
+  >"$test_home/no-agents.stdout" 2>"$test_home/no-agents.stderr" || no_agents_status=$?
+test "$no_agents_status" -eq 3
+grep -qF "No Claude agent definitions found under $no_agents_repo/.claude/agents" \
+  "$test_home/no-agents.stderr"
 
 # Vendor the hidden directory using the documented copy layout. Repeating the
 # copy must not nest another .agents directory inside the destination.
@@ -246,6 +326,12 @@ for router_link in $router_links; do
   cmp -s "$repo_dir/.agents/$router_link" "$vendor_repo/.agents/$router_link"
 done
 test ! -e "$vendor_repo/.agents/.agents"
+mkdir -p "$vendor_repo/.claude/agents"
+cp "$repo_dir"/.claude/agents/*.md "$vendor_repo/.claude/agents/"
+for source_agent in "$repo_dir"/.claude/agents/*.md; do
+  agent_file="$(basename "$source_agent")"
+  cmp -s "$source_agent" "$vendor_repo/.claude/agents/$agent_file"
+done
 
 mkdir -p "$test_home/refresh-state"
 printf '%s\n' '2099-01-01' >"$test_home/refresh-state/multi-provider-orchestration-refresh-date"
