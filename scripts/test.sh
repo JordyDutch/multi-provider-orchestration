@@ -121,6 +121,8 @@ grep -qF 'There is no per-agent switch' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF 'When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path' \
   "$repo_dir/.agents/rules/setup.md"
+grep -qF 'then runs a local `/advisor` check under the same restricted' \
+  "$repo_dir/.agents/rules/claude-native.md"
 grep -qF '`--advisor` attaches the pinned Fable 5.1 advisor' \
   "$repo_dir/.agents/rules/delegation.md"
 

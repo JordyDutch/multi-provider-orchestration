@@ -102,5 +102,13 @@ settings selected a Fable advisor.
   tool despite the user setting, confirming that restricted mode ignores it
   (5.96 seconds). With `--advisor` it consulted Fable once and reported
   `advisor=claude-fable-5-1 (called)` (14.93 seconds).
+- In Claude Code 2.1.304, a restricted print run with the prompt `/advisor`
+  returned locally with cost 0 and empty `modelUsage`. With the Fable setting it
+  printed `Advisor: Fable 5.1` and the allowed aliases. With
+  `CLAUDE_CODE_DISABLE_ADVISOR_TOOL`, `CLAUDE_CODE_USE_BEDROCK`, or
+  `DISABLE_TELEMETRY` in the settings `env` block it printed `/advisor isn't
+  available in this environment.`; an `availableModels` list without Fable
+  removed `fable` from the aliases, and a different `advisorModel` changed the
+  first line. The `--advisor` helper uses this as its preflight.
 
 These are capability checks, not quality, speed, or cost rankings.

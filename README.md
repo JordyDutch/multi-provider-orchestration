@@ -175,7 +175,9 @@ For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.1 at `high`
 effort, Sonnet 5.5 (`claude-sonnet-5-5`) at `low` for mechanical work
 (`medium` for batches), or Haiku 5.5 (`claude-haiku-5-5`) at `low` for
 read-only search and extraction, and use the existing Claude subscription login.
-Add `--advisor` to let the worker consult the pinned Fable 5.1 advisor:
+Add `--advisor` to let the worker consult the pinned Fable 5.1 advisor. The
+helper first confirms locally, under the same restricted and managed settings,
+that Fable 5.1 is available, and stops before inference otherwise:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md

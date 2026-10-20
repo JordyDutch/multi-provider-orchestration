@@ -76,11 +76,14 @@ session can only pair it with itself. See
 
 The task helpers use restricted mode, which loads only managed settings and
 `--settings`. Pass `--advisor` to attach the pinned Fable 5.1 advisor through
-`--settings`. The helper fails before inference when a disabling variable is
-set, accepts usage from the executor plus optionally `claude-fable-5-1`, and
-reports whether the advisor was called. Missing consent or an `availableModels`
-exclusion shows only as `(not called)`. The helper never enables a fallback
-model; a managed fallback to Fable 5.1 would look like advisor use.
+`--settings`. Before inference, the helper rejects a disabling variable in its
+environment, then runs a local `/advisor` check under the same restricted
+settings. It stops unless that check reports Fable 5.1 as an allowed advisor,
+which also covers managed `env`, `advisorModel`, and `availableModels`
+settings. It accepts usage from the executor plus optionally
+`claude-fable-5-1` and reports whether the advisor was called; missing Fable
+consent may still show only as `(not called)`. The helper never enables a
+fallback model; a managed fallback to Fable 5.1 would look like advisor use.
 
 ## Verify
 

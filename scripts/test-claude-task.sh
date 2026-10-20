@@ -49,6 +49,17 @@ case "$1" in
     exit 0
     ;;
 esac
+# Only the --advisor probe omits --disable-slash-commands.
+advisor_probe=yes
+for fake_arg in "$@"; do
+  [ "$fake_arg" != --disable-slash-commands ] || advisor_probe=no
+done
+if [ "$advisor_probe" = yes ]; then
+  printf '%s\n' "$@" >"$CAPTURE_PROBE_ARGS"
+  cat >"$CAPTURE_PROBE_STDIN"
+  cat "$FAKE_PROBE_RESULT"
+  exit "${FAKE_PROBE_STATUS:-0}"
+fi
 printf '%s\n' "$@" >"$CAPTURE_ARGS"
 pwd >"$CAPTURE_CWD"
 if [ -n "${CAPTURE_UMASK:-}" ]; then
@@ -72,12 +83,22 @@ printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5-5":{}},"result":"Sonnet result"}' >"$test_dir/sonnet.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{}},"result":"Haiku result"}' >"$test_dir/haiku.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-fable-5-1":{}},"result":"Haiku advised result"}' >"$test_dir/advisor.json"
+# Local /advisor output, recorded from Claude Code 2.1.304.
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-ok.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"/advisor isn'"'"'t available in this environment."}' >"$test_dir/probe-unavailable.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Opus 5.5\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-opus.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <sonnet|off>"}' >"$test_dir/probe-excluded.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{"claude-haiku-5-5":{}},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-inference.json"
+printf '%s\n' '{"type":"result","subtype":"error_during_execution","is_error":true,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-error.json"
 
 export PATH="$test_dir/bin:/usr/bin:/bin"
 export CAPTURE_ARGS="$test_dir/args"
 export CAPTURE_CWD="$test_dir/cwd"
 export CAPTURE_STDIN="$test_dir/stdin"
+export CAPTURE_PROBE_ARGS="$test_dir/probe-args"
+export CAPTURE_PROBE_STDIN="$test_dir/probe-stdin"
 export FAKE_RESULT="$test_dir/opus.json"
+export FAKE_PROBE_RESULT="$test_dir/probe-ok.json"
 
 "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Changed src/example.txt' "$test_dir/out"
@@ -148,8 +169,10 @@ grep -qxF 'medium' "$test_dir/args"
 grep -qxF 'acceptEdits' "$test_dir/args"
 grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
 grep -qF 'model=claude-sonnet-5-5 effort=medium mode=edit' "$test_dir/err"
+rm -f "$CAPTURE_PROBE_ARGS"
 FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
+test ! -e "$CAPTURE_PROBE_ARGS"
 grep -qxF 'Haiku result' "$test_dir/out"
 grep -qxF 'claude-haiku-5-5' "$test_dir/args"
 grep -qxF 'low' "$test_dir/args"
@@ -184,6 +207,25 @@ grep -qF 'before reporting completion.' "$test_dir/stdin"
 grep -qF 'Literal shell text:' "$test_dir/stdin"
 grep -qF 'model=claude-haiku-5-5 effort=low mode=read-only advisor=claude-fable-5-1' "$test_dir/err"
 grep -qF 'advisor=claude-fable-5-1 (called)' "$test_dir/err"
+# The probe runs the same model and restricted settings, without the brief.
+grep -qxF '/advisor' "$CAPTURE_PROBE_STDIN"
+if grep -qF 'Literal shell text:' "$CAPTURE_PROBE_STDIN"; then
+  printf '%s\n' 'The advisor probe received the brief.' >&2
+  exit 1
+fi
+for probe_arg in --print claude-haiku-5-5 low --restricted --strict-mcp-config \
+  --no-session-persistence --settings '{"advisorModel":"claude-fable-5-1"}' \
+  dontAsk none; do
+  grep -qxF -- "$probe_arg" "$CAPTURE_PROBE_ARGS"
+done
+awk 'previous == "--tools" { empty_tools = ($0 == "") } { previous = $0 }
+  END { exit !empty_tools }' "$CAPTURE_PROBE_ARGS"
+for forbidden in Read,Grep,Glob Edit Write Bash acceptEdits; do
+  if grep -qF -- "$forbidden" "$CAPTURE_PROBE_ARGS"; then
+    printf 'The advisor probe exposed %s.\n' "$forbidden" >&2
+    exit 1
+  fi
+done
 FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" --advisor \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Haiku result' "$test_dir/out"
@@ -290,6 +332,28 @@ done
 grep -qF 'DISABLE_TELEMETRY' "$test_dir/err"
 (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=false expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
 grep -qF 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' "$test_dir/err"
+# Managed settings act after the environment check; the restricted /advisor
+# probe must confirm an allowed Fable 5.1 advisor before inference.
+for probe_case in unavailable opus excluded inference error; do
+  (FAKE_PROBE_RESULT="$test_dir/probe-$probe_case.json" \
+    expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+  grep -qF 'could not confirm an available Fable 5.1 advisor' "$test_dir/err"
+done
+(FAKE_PROBE_RESULT="$test_dir/probe-unavailable.json" \
+  expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF "(reported: /advisor isn't available in this environment.)" "$test_dir/err"
+(FAKE_PROBE_RESULT="$test_dir/probe-opus.json" \
+  expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF '(reported: Advisor: Opus 5.5)' "$test_dir/err"
+(FAKE_PROBE_RESULT="$test_dir/probe-inference.json" \
+  expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF '(reported: no valid /advisor result)' "$test_dir/err"
+(FAKE_PROBE_STATUS=1 expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF '(reported: no valid /advisor result)' "$test_dir/err"
+probe_status=0
+FAKE_PROBE_RESULT="$test_dir/probe-unavailable.json" "$test_dir/bin/haiku-task" --advisor \
+  "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err" || probe_status=$?
+test "$probe_status" -eq 6
 
 # Keep basic utilities available while deliberately hiding jq.
 mkdir -p "$test_dir/no-jq"
