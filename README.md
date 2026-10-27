@@ -126,19 +126,32 @@ missing, or failing checkouts stop safely without overwriting user work.
 
 ## Model and reasoning routes
 
-Astra owns Codex orchestration and assigns work to Sol, Luna, Haiku, Sonnet, Opus, and Fable.
+Astra owns Codex orchestration and assigns work to Sol, Luna, Terra, Haiku, Sonnet, Opus, and Fable.
 Astra keeps the plan, task allocation, integration, and final judgement even
 when Claude executes a scope. Fable owns only direct Claude-led entry sessions.
-Both entry owners can choose suitable Sol, Luna, Haiku, Sonnet, or Opus scopes. The
+Both entry owners can choose suitable Sol, Luna, Terra, Haiku, Sonnet, or Opus scopes. The
 canonical [model routing guide](.agents/rules/routing.md) contains model IDs, roles,
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
-Codex routing uses Astra, GPT-6.1 Sol (`gpt-6.1-sol`), and Luna, with Sol handling
+Codex routing uses Astra, GPT-6.1 Sol (`gpt-6.1-sol`), Luna, and Terra, with Sol handling
 both everyday and complex implementation at `high` and difficult diagnosis at
 `xhigh`. Luna uses `low` for one mechanical pass or `medium` for batches. Table
 counts, groups, and totals use Luna `medium` with a code or CLI calculation
 whose command and output are returned for the owner to check.
+
+GPT-6.1 Terra (`gpt-6.1-terra`) handles writing from supplied sources, image and
+chart interpretation, visual QA, and bounded already-authorized browser,
+desktop, or app tasks. Use `low` for simple writing or image inspection and
+`medium` for multiple sources/screens or multi-step work. The
+[Terra guide](.agents/rules/terra.md) covers launch examples and tool checks:
+verify actual worker capabilities and permissions, prefer supported connectors,
+and observe the requested final state. File sandboxes do not constrain app
+connectors. The CLI route covers writing and static images; live app tasks use
+an equipped native worker or owner. Screenshot-only QA does not replace code
+or security review. The CLI route requires Codex CLI 0.159.0 or newer; see
+[Codex models](https://learn.chatgpt.com/docs/models). Availability does not prove
+browser/app access or comparative performance or cost savings.
 
 Use Fable early for architecture input, difficult diagnosis, or complex
 execution when its capability fits. Astra can select it directly without first
@@ -148,7 +161,7 @@ Choose a specialist after a cheap scope check only with a known scope,
 sufficient capability, decisive checks, and expected net savings. Keep unclear
 work with the strong owner; use the owner or shell for tiny deterministic work.
 Set both the live-verified model and effort in the actual worker spawn, with
-fresh compact context where supported. Naming Sol or Luna
+fresh compact context where supported. Naming Sol, Luna, or Terra
 in instructions does not change the runtime model. Consider Opus for
 frontend/UX before authoring and return unexpected behavioral or security
 questions to the owner. The owner integrates the result and final checks.
@@ -167,7 +180,8 @@ more tokens if it receives excess context or causes repeated work.
 The [delegation guide](.agents/rules/delegation.md) describes the brief, launch,
 and return contract. Astra launches native Codex workers with explicit model
 and effort: Sol `high` for implementation (`xhigh` for difficult diagnosis), or
-Luna `low` for mechanical work (`medium` for batches). Use a fresh compact brief
+Luna `low` for mechanical work (`medium` for batches), or Terra `low`/`medium`
+for the writing, visual, and supported app scopes above. Use a fresh compact brief
 where supported. Unconfigured workers can inherit the parent's model. Direct
 Claude-led Fable can assign the same Codex specialists through installed
 `codex exec`, with explicit model, effort, working directory, and sandbox. The

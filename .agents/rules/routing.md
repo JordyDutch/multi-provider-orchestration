@@ -1,6 +1,6 @@
 # Model routing
 
-Read this guide when selecting models, effort, or the owning orchestrator.
+Select models, effort, and the owner here.
 
 ## Availability
 
@@ -13,6 +13,7 @@ codex debug models | jq -r '
       .slug == "gpt-6-astra"
       or .slug == "gpt-6.1-sol"
       or .slug == "gpt-6-luna"
+      or .slug == "gpt-6.1-terra"
     )
   | [
       .slug,
@@ -23,8 +24,8 @@ codex debug models | jq -r '
 '
 ```
 
-Use compact catalog output. Catalog presence and login do not prove access;
-confirm it with the first meaningful routed task. If Astra cannot own it, report
+Catalog presence and login do not prove access; confirm the first meaningful
+routed task. If Astra cannot own it, report
 that and fall back once to Sol high/xhigh only when adequate; otherwise stop
 the affected scope. Never silently substitute models. Use supported effort only.
 
@@ -35,13 +36,14 @@ the affected scope. Never silently substitute models. Use supported effort only.
 | Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` | Planning, task allocation, integration, and final judgement |
 | Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis |
 | Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
+| Codex writing/visual/app specialist | GPT-6.1 Terra (`gpt-6.1-terra`) | `low` | Source-grounded writing, image/chart interpretation, visual QA, bounded app work; medium for multiple sources/screens or steps; [terra.md](terra.md) |
 | Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Complex work assigned by Astra, direct Claude-led orchestration, and cross-cutting reviews |
 | Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` | Mechanical edits via `sonnet-task` or the medium-pinned `sonnet-worker`; medium for batches |
 | Claude fast | Haiku 5.5 (`claude-haiku-5-5`) | `low` | Read-only search and extraction via `haiku-scout` or `haiku-task`; no tallies |
 
-Use the lowest sufficient effort. Never use bare or `latest` aliases for
-pinned Claude routes. Pin native Claude workers and the advisor with
+Use the lowest sufficient effort. Never use bare or `latest` Claude aliases.
+Pin native Claude workers and the advisor with
 [claude-native.md](claude-native.md).
 
 ## Choose by consequence
@@ -55,33 +57,30 @@ pinned Claude routes. Pin native Claude workers and the advisor with
 | Security, auth, permissions, funds, destructive change, data loss, migration, costly architecture | Astra/Fable xhigh; max only for the hardest remaining judgement | Mandatory strongest suitable opposite-provider review |
 | Large task with truly independent workstreams | Astra/Fable owns; bounded workers, or ultra only when supported | Owner synthesis plus risk-appropriate review |
 
-For tabular counts, groups, or totals across rows, use Luna medium. Put in the
-brief: compute with code or CLI tools and return the command and output. Never
-rely on a mental tally, at any effort. The owner checks the result.
+For table counts, groups, or totals, use Luna medium. Brief: compute with code
+or CLI tools and return command and output. Never tally mentally. The owner
+checks the result.
 
-`Bounded` means named scope, known success criteria and checks, and no unresolved
-architecture or integration. Promote difficult diagnosis to Sol xhigh or Fable
+`Bounded` means named scope, decisive checks, and resolved architecture and
+integration. Promote difficult diagnosis to Sol xhigh or Fable
 high for analysis; the owner decides architecture and integrates.
 
-Delegate execution only with known scope, sufficient capability, decisive checks,
-and expected net savings; otherwise keep the strong owner. Mandatory reviews
-apply regardless of savings. Either entry owner can choose any listed worker by
-fit; consider Opus for frontend/UX before authoring.
+Delegate with known scope, sufficient capability, decisive checks, and expected
+net savings; otherwise keep the owner. Mandatory reviews still apply. Either
+entry owner may choose any listed worker; consider Opus for frontend/UX.
 Claude is not limited to reviewing Codex. A hand-off never transfers ownership.
-Use the owner or shell for tiny deterministic tasks.
+Keep tiny work with the owner or shell.
 
 Launch workers using [delegation.md](delegation.md).
 
-Set both model and effort in each worker launch after live verification. Use
-fresh compact context when supported; model names in instructions do not switch
-the runtime. If explicit routing is unavailable, report it and keep the scope
-with the owner. Never silently substitute or inherit the owner's effort.
+Launch with live-verified model and effort and fresh compact context where
+supported. Instructions do not switch models. If routing is unavailable, report
+it and retain the scope. Never silently substitute or inherit owner effort.
 
 ## Effort
 
-- `low`: narrow, single-pass execution and mechanical support, normally Luna,
-  Haiku, or Sonnet.
-- `medium`: bounded judgement by Sol or mechanical batches by Luna or Sonnet.
+- `low`: single-pass support by Luna, Haiku, Sonnet, or Terra writing/inspection.
+- `medium`: Sol bounded judgement, Luna/Sonnet batches, Terra multi-source/step work.
 - `high`: Sol implementation, multi-file tradeoffs, or orchestration by role.
 - `xhigh`: difficult diagnosis, security, or ambiguous design; use on the small
   decisive stage.
@@ -90,7 +89,7 @@ with the owner. Never silently substitute or inherit the owner's effort.
 
 Review routes in `reviews.md` choose effort separately by authorship and risk.
 
-When Luna needs planning or behavioral judgement,
+For Luna planning or behavioral judgement,
 use Sol medium for bounded analysis or Sol high for implementation.
 If Sol exceeds its scope, return architecture and
 integration decisions to the calling owner.

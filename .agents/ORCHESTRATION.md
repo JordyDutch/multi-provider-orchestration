@@ -14,6 +14,7 @@ read every playbook by default.
 | Global installation, refresh, portability, or model availability | [`rules/setup.md`](rules/setup.md) | Fail-closed checks and byte-for-byte verification |
 | Parallel or multi-agent work | [`rules/execution.md`](rules/execution.md) | Only independent scopes, bounded fan-out, no unapproved nesting |
 | Assigning a specialist | [`rules/routing.md`](rules/routing.md) and [`rules/delegation.md`](rules/delegation.md) | Explicit model and effort, compact brief, owner integrates |
+| Source-grounded writing, visual interpretation/QA, or bounded browser/app work | Routing, delegation, and [`rules/terra.md`](rules/terra.md) | Terra low/medium; verify tools, authorization, and observable results |
 | Claude-led native subagents, workflow agents, or advisor setup | [`rules/claude-native.md`](rules/claude-native.md) | Pinned agent types or exact workflow model IDs; Fable advisor at decision points |
 
 ## Canonical rules

@@ -15,6 +15,7 @@ Do not launch every available model.
 | --- | --- | --- |
 | Implementation, tests, bounded analysis | Sol high for implementation, medium for bounded analysis, xhigh for difficult diagnosis | Native Codex worker; `codex exec` from Claude |
 | Mechanical extraction, inventory, transformations | Luna low/medium; Haiku 5.5 low for read-only search; Sonnet 5.5 low/medium for edits | Native Codex worker; `codex exec` from Claude; `haiku-scout`, `sonnet-worker`, `haiku-task`, `sonnet-task` |
+| Writing, visual QA, bounded app tasks | Terra low/medium | Native Codex worker; CLI from Claude for writing/static images only; [terra.md](terra.md) |
 | Frontend/UX or substantive implementation by fit | Opus high | `opus-worker` or `opus-task` |
 | Architecture input, difficult diagnosis, complex analysis or implementation | Fable high | `fable-specialist` or `fable-task` |
 
@@ -31,11 +32,10 @@ with the entry owner.
 
 ## Direct Claude to Codex
 
-Native Codex workers exist only inside Codex. From a direct Claude-led session,
-the Claude owner can use the installed `codex exec` in host context. Run the compact live
-catalog filter in [routing.md](routing.md) once before the first hand-off; do
-not dump the raw catalog. If the shell disallows a pipeline, redirect the
-catalog to a private temporary file and run `jq` separately.
+From Claude, use installed `codex exec` in host context. Native Codex workers
+exist only inside Codex. Run the compact catalog filter in [routing.md](routing.md)
+before the first hand-off. If pipelines are disallowed, use a private temporary
+catalog file and run `jq` separately. Never dump the raw catalog.
 
 ```sh
 codex exec --model gpt-6.1-sol -c 'model_reasoning_effort="high"' \
@@ -57,12 +57,10 @@ not full transcripts. The Claude owner integrates results and required checks.
 
 ## Task brief
 
-Give each worker a concise goal, exact read/write paths, acceptance criteria,
-relevant commands or evidence, and known constraints. Include the calling owner,
-whether edits are authorized, and a prohibition on further delegation. Workers
-return changed files or findings, checks actually performed, blockers, and
-decisions for the calling owner. Do not send conversation transcripts,
-credentials, personal data, or unrelated repository material.
+Brief with goal, exact read/write paths, acceptance criteria, commands/evidence,
+constraints, calling owner, edit authorization, and no further delegation.
+Workers return changed files/findings, actual checks, blockers, and owner decisions.
+Exclude transcripts, credentials, personal data, and unrelated material.
 
 Announce the selected model and scope once, then verify the runtime model and
 effort on its first meaningful task; a requested name is not proof of use.
