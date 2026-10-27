@@ -112,3 +112,34 @@ settings selected a Fable advisor.
   first line. The `--advisor` helper uses this as its preflight.
 
 These are capability checks, not quality, speed, or cost rankings.
+
+## Terra visual route check: 2026-10-27
+
+The owner rendered an isolated synthetic PNG with two product cards. Panel A's
+button extended beyond the card and clipped its label; panel B showed the full
+button. Both cards displayed `24.00 EUR`. The worker received only the image
+path and a read-only inspection brief, without the rendering source or expected
+answer. No customer data or live application was involved.
+
+A native Codex worker requested `gpt-6.1-terra` at `medium` with
+`fork_turns: "none"`. Its saved `turn_context` confirmed the exact model and
+effort, and its tool call used `view_image` on the assigned PNG. It returned:
+
+- Panel A has the visible defect: the button and label are clipped at the right
+  card edge; panel B shows `Continue to next step` in full.
+- Both displayed prices are `24.00 EUR`.
+- The evidence is static; button behavior, responsiveness, and the underlying
+  cause remain unverified. No interaction was claimed.
+
+The owner checked these observations against the image and known fixture,
+validated the structured result, and confirmed the input remained byte-identical.
+No rework was needed. This supports the bounded image-inspection route, without
+establishing comparative quality, speed, cost, or live browser/desktop capability.
+
+An earlier CLI attempt used Codex 0.164.0 with `--ignore-user-config`, the same
+model/effort, and a read-only sandbox. Its startup and saved context confirmed
+the requested settings, but model-metadata refresh and connection attempts timed
+out; the run ended with `Incomplete response returned, reason: max_output_tokens`
+and exit status 1 without a usable result. That failed transport/configuration
+path is excluded from model-quality conclusions. The native success does not
+establish an end-to-end CLI image hand-off on this machine.

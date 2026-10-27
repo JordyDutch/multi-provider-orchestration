@@ -97,10 +97,12 @@ codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
 ```
 
 Sol handles bounded and complex execution and regular reviews; Luna handles
-mechanical work. Astra can assign Opus frontend/UX or implementation and involve
+mechanical work. Terra handles writing, visuals, and bounded app tasks through
+[terra.md](terra.md), with separate tool and authorization checks.
+Astra can assign Opus frontend/UX or implementation and involve
 Fable early for architecture input, difficult diagnosis, or complex execution
 while retaining ownership. Fable owns direct Claude-led entry sessions and can
-assign suitable Sol, Luna, Haiku, Sonnet, or Opus scopes. Launch routes live in
+assign suitable Sol, Luna, Terra, Haiku, Sonnet, or Opus scopes. Launch routes live in
 [delegation.md](delegation.md).
 
 The installer adds `opus-task`, `fable-task`, `sonnet-task`, and `haiku-task`

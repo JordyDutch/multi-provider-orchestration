@@ -49,8 +49,8 @@ Mandatory reviews apply regardless of savings.
   for mechanical work or `medium` for multiple items; Sol (`gpt-6.1-sol`) at
   `medium` when bounded judgement is needed. In Claude-led work, the owner may
   use those specialists or pinned Haiku and Sonnet agents.
-- Astra owns Codex orchestration and delegates by fit to Sol, Luna, Haiku,
-  Sonnet, Opus, or Fable. Fable owns only direct Claude-led sessions. Use
+- Astra owns Codex orchestration and delegates by fit to Sol, Luna, Terra, Opus,
+  Fable, Sonnet, or Haiku. Fable owns only direct Claude-led sessions. Use
   `rules/routing.md` to choose and `rules/delegation.md` to launch workers;
   pin native Claude workers and the advisor via `rules/claude-native.md`.
   The owner integrates and verifies; delegation never transfers ownership.

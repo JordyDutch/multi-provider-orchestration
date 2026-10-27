@@ -109,6 +109,22 @@ grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
+grep -qF '| Codex writing/visual/app specialist | GPT-6.1 Terra (`gpt-6.1-terra`) | `low` |' \
+  "$repo_dir/.agents/rules/routing.md"
+grep -qF 'or .slug == "gpt-6.1-terra"' "$repo_dir/.agents/rules/routing.md"
+for terra_link_source in routing delegation setup; do
+  grep -qF '[terra.md](terra.md)' "$repo_dir/.agents/rules/$terra_link_source.md"
+done
+grep -qF 'codex exec --model gpt-6.1-terra' "$repo_dir/.agents/rules/terra.md"
+# Parse the native launch example so all routing fields are valid and explicit.
+awk '/^```json$/ { in_json = 1; next } /^```$/ { in_json = 0 } in_json' \
+  "$repo_dir/.agents/rules/terra.md" >"$test_home/terra-launch.json"
+jq -e '.model == "gpt-6.1-terra" and .reasoning_effort == "medium" and
+  .fork_turns == "none"' "$test_home/terra-launch.json" >/dev/null
+awk '/^```sh$/ { in_shell = 1; next } /^```$/ { in_shell = 0 } in_shell' \
+  "$repo_dir/.agents/rules/terra.md" >"$test_home/terra-launch.sh"
+sh -n "$test_home/terra-launch.sh"
+grep -qF '(.agents/rules/terra.md)' "$repo_dir/README.md"
 grep -qF '| Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude fast | Haiku 5.5 (`claude-haiku-5-5`) | `low` |' \
@@ -203,7 +219,7 @@ grep -qF 'follow the implementation author, not the orchestrator' \
 grep -qF ".agents/AGENTS.md" "$repo_dir/.agents/rules/setup.md"
 grep -qF '(.agents/rules/routing.md)' "$repo_dir/README.md"
 grep -qF '(.agents/rules/reviews.md)' "$repo_dir/README.md"
-grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Haiku, Sonnet, Opus, and Fable." \
+grep -qF "Astra owns Codex orchestration and assigns work to Sol, Luna, Terra, Haiku, Sonnet, Opus, and Fable." \
   "$repo_dir/README.md"
 grep -qF ".agents/ORCHESTRATION.md" "$repo_dir/ORCHESTRATION.md"
 
@@ -1017,7 +1033,7 @@ grep -qxF "gpt-6.1-sol" "$test_home/installed-sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
 grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
 
-for invalid_model in gpt-6-sol gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra sol unavailable; do
+for invalid_model in gpt-6-sol gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra gpt-6.1-terra sol unavailable; do
   if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
     CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
@@ -1271,6 +1287,7 @@ rm unrelated-astra.txt
 for invalid_setting in \
   ASTRA_REVIEW_MODEL=gpt-6-sol \
   ASTRA_REVIEW_MODEL=gpt-6.1-sol \
+  ASTRA_REVIEW_MODEL=gpt-6.1-terra \
   ASTRA_REVIEW_MODEL=astra \
   ASTRA_REVIEW_EFFORT=ultra \
   ASTRA_REVIEW_EFFORT=invalid \
