@@ -10,7 +10,7 @@ fail() {
 effort=high
 case "$(basename -- "$0")" in
   claude-task.sh|opus-task) model=claude-opus-5-5 ;;
-  fable-task) model=claude-fable-5-1 ;;
+  fable-task) model=claude-fable-5-2 ;;
   sonnet-task) model=claude-sonnet-5-5; effort=low ;;
   haiku-task) model=claude-haiku-5-5; effort=low ;;
   *) fail 'unknown entry point; use opus-task, fable-task, sonnet-task, or haiku-task.' ;;
@@ -29,7 +29,7 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --advisor)
-      advisor=claude-fable-5-1
+      advisor=claude-fable-5-2
       shift
       ;;
     --effort)
@@ -102,7 +102,7 @@ if [ "$advisor" != off ]; then
   advisor_probe="$(cd "$workdir" && printf '%s\n' /advisor |
     "$claude_bin" --print --model "$model" --effort "$effort" --restricted \
       --strict-mcp-config --no-session-persistence --output-format json \
-      --settings '{"advisorModel":"claude-fable-5-1"}' \
+      --settings '{"advisorModel":"claude-fable-5-2"}' \
       --permission-mode dontAsk --permission-prompts none --tools '' \
       2>/dev/null)" || advisor_probe=''
   advisor_probe_text="$(printf '%s\n' "$advisor_probe" | jq -rs '
@@ -113,11 +113,11 @@ if [ "$advisor" != off ]; then
       then .result else empty end
   ' 2>/dev/null || true)"
   advisor_probe_line="$(printf '%s\n' "$advisor_probe_text" | sed -n 1p)"
-  if [ "$advisor_probe_line" != 'Advisor: Fable 5.1' ] ||
+  if [ "$advisor_probe_line" != 'Advisor: Fable 5.2' ] ||
     ! printf '%s\n' "$advisor_probe_text" | sed -n 2p |
       grep -Eq '^Usage: /advisor <([a-z0-9.-]+[|])*fable([|][a-z0-9.-]+)*>$'; then
     advisor_probe_line="$(printf '%s' "$advisor_probe_line" | tr -cd '[:print:]' | cut -c1-120)"
-    fail "--advisor could not confirm an available Fable 5.1 advisor under the restricted settings (reported: ${advisor_probe_line:-no valid /advisor result}); run without --advisor." 6
+    fail "--advisor could not confirm an available Fable 5.2 advisor under the restricted settings (reported: ${advisor_probe_line:-no valid /advisor result}); run without --advisor." 6
   fi
 fi
 
@@ -194,7 +194,7 @@ set -- \
   --output-format json \
   --exclude-dynamic-system-prompt-sections
 if [ "$advisor" != off ]; then
-  set -- "$@" --settings '{"advisorModel":"claude-fable-5-1"}'
+  set -- "$@" --settings '{"advisorModel":"claude-fable-5-2"}'
 fi
 if [ "$mode" = edit ]; then
   set -- "$@" --permission-mode acceptEdits --permission-prompts none \

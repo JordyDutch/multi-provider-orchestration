@@ -20,7 +20,7 @@ for people who clone the repository before installing it.
 | `.claude/agents/` | Pinned Claude subagent types (`haiku-scout`, `sonnet-worker`, `opus-worker`, `fable-specialist`), installed to `~/.claude/agents/`. |
 | `scripts/install-global.sh` | Idempotent installer for Codex, Claude, and the review and task helpers. |
 | `scripts/refresh-global-setup.sh` | Safe once-per-day fast-forward, test, and reinstall refresh. |
-| `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.1 review hand-off. |
+| `scripts/claude-review.sh` | Focused read-only Opus 5.5 or Fable 5.2 review hand-off. |
 | `scripts/claude-task.sh` | Scoped Claude execution, installed as `opus-task`, `fable-task`, `sonnet-task`, and `haiku-task`. |
 | `scripts/sol-review.sh` | Shared read-only Codex helper, installed as `sol-review` and `astra-review`. |
 | `scripts/test.sh` | Isolated portability, installer, and dispatch regression tests. |
@@ -74,9 +74,10 @@ The installer:
   `refresh-global-setup` under `~/.local/bin`;
 - preserves existing `~/.claude/CLAUDE.md` content and adds exactly one
   `@~/.codex/AGENTS.md` import;
-- pins `"advisorModel": "claude-fable-5-1"` in `~/.claude/settings.json` and
-  replaces a bare `model` alias (`opus`, `sonnet`, `haiku`, or `fable`) with
-  its exact ID, keeping every other setting, the file mode, and a symlinked
+- pins `"advisorModel": "claude-fable-5-2"` in `~/.claude/settings.json` and
+  replaces a bare `model` alias (`opus`, `sonnet`, `haiku`, or `fable`) or the
+  superseded `claude-fable-5-1` with its exact current ID, keeping every other
+  setting, the file mode, and a symlinked
   file; before any write, settings that are not one JSON object return 65,
   missing `jq` returns 69, and an unpinned read-only file or directory returns 73;
 - writes the Claude files under `CLAUDE_CONFIG_DIR` instead of `~/.claude`
@@ -190,13 +191,13 @@ read-only; use `workspace-write` only for already-authorized local edits in
 isolated or non-overlapping paths. Capture the first run's exit status, result,
 and runtime model/effort. A model name in the brief alone does not route it.
 
-For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.1 at `high`
+For Claude assignments, the task helpers pin Opus 5.5 or Fable 5.2 at `high`
 effort, Sonnet 5.5 (`claude-sonnet-5-5`) at `low` for mechanical work
 (`medium` for batches), or Haiku 5.5 (`claude-haiku-5-5`) at `low` for
 read-only search and extraction, and use the existing Claude subscription login.
-Add `--advisor` to let the worker consult the pinned Fable 5.1 advisor. The
+Add `--advisor` to let the worker consult the pinned Fable 5.2 advisor. The
 helper first confirms locally, under the same restricted and managed settings,
-that Fable 5.1 is available, and stops before inference otherwise:
+that Fable 5.2 is available, and stops before inference otherwise:
 
 ```sh
 opus-task /path/to/worktree /path/to/brief.md
@@ -229,7 +230,8 @@ Constraints: preserve unrelated files and the existing response shape.
 Return: changed files, checks actually performed, blockers, decisions for Astra.
 ```
 
-Sonnet 5.5 requires Claude Code 2.1.284 or newer and Haiku 5.5 requires 2.1.293
+Sonnet 5.5 requires Claude Code 2.1.284 or newer, Haiku 5.5 requires 2.1.293
+or newer, and Fable 5.2 (task helper, subagent, and advisor) requires 2.1.321
 or newer; see the
 [Claude model configuration](https://code.claude.com/docs/en/model-config).
 Run `claude update` if your CLI is older. Haiku handles read-only search and
@@ -258,24 +260,25 @@ installer adds four pinned agent types to `~/.claude/agents/`:
 | `haiku-scout` | `claude-haiku-5-5`, low | Read-only search, inventory, extraction |
 | `sonnet-worker` | `claude-sonnet-5-5`, medium | Mechanical edits and batches |
 | `opus-worker` | `claude-opus-5-5`, high | Scoped behavioral code, tests, frontend/UX |
-| `fable-specialist` | `claude-fable-5-1`, high | Architecture input and hard diagnosis |
+| `fable-specialist` | `claude-fable-5-2`, high | Architecture input, hard diagnosis, long complex scopes |
 
 Claude Code reloads changed definitions, but a session that started before
 `~/.claude/agents/` existed needs a restart. Spawn them by agent type without a
 `model` override; the Agent tool's `model` parameter accepts only aliases. In
 workflow scripts, pass an exact model ID and effort to every `agent()` call.
-An Opus or Sonnet session still switches to Fable 5.1 for work the routing
-guide assigns to the Fable owner.
+An Opus or Sonnet session still switches to Fable 5.2 for work the routing
+guide assigns to the Fable owner. The [Fable guide](.agents/rules/fable.md)
+covers its effort levels, brief style, orchestration behavior, and limits.
 
 The [advisor](https://code.claude.com/docs/en/advisor) lets the working model
-consult a stronger model at decision points. The installer pins Fable 5.1 in
+consult a stronger model at decision points. The installer pins Fable 5.2 in
 `~/.claude/settings.json` and restores it whenever the installer runs again:
 
 ```json
-{ "advisorModel": "claude-fable-5-1" }
+{ "advisorModel": "claude-fable-5-2" }
 ```
 
-Fable 5.1 can advise every Claude main model, and subagents inherit it. An Opus
+Fable 5.2 can advise every Claude main model, and subagents inherit it. An Opus
 5.5 or Sonnet 5.5 entry session plus the Fable advisor keeps routine turns on
 the cheaper model. Each advisor call reads the caller's full context at Fable
 rates. The [Claude-native guide](.agents/rules/claude-native.md) covers
@@ -332,9 +335,10 @@ installer never rewrites arbitrary repositories.
 ## Focused reviews
 
 `claude-review` pins `claude-opus-5-5` at `high` effort. Older Opus IDs and
-unpinned aliases are rejected. `fable-review` keeps `claude-fable-5-1` at `xhigh`.
+unpinned aliases are rejected. `fable-review` keeps `claude-fable-5-2` at `xhigh`.
 The exact Opus ID follows [Anthropic's migration guide](https://platform.claude.com/docs/en/models/opus-5-5/migration-guide).
-Opus 5.5 requires Claude Code 2.1.280 or newer. Run `claude update` before using
+Opus 5.5 requires Claude Code 2.1.280 or newer and Fable 5.2 requires 2.1.321
+or newer. Run `claude update` before using
 the helper if your CLI is older.
 
 A normal review fails closed only when its selected scope has no tracked or

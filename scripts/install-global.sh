@@ -18,9 +18,10 @@ case "$claude_dir" in
 esac
 claude_agents_dir="$claude_dir/agents"
 claude_settings="$claude_dir/settings.json"
-fable_model='claude-fable-5-1'
+fable_model='claude-fable-5-2'
 # Bare aliases follow future releases; settings keep the exact IDs instead.
-model_aliases='{"opus":"claude-opus-5-5","sonnet":"claude-sonnet-5-5","haiku":"claude-haiku-5-5","fable":"claude-fable-5-1"}'
+# Earlier installs pinned `fable` to claude-fable-5-1; move that pin forward.
+model_aliases='{"opus":"claude-opus-5-5","sonnet":"claude-sonnet-5-5","haiku":"claude-haiku-5-5","fable":"claude-fable-5-2","claude-fable-5-1":"claude-fable-5-2"}'
 pinned_settings='.advisorModel = $advisor
   | if (.model | type) == "string" and $aliases[.model] != null
     then .model = $aliases[.model] else . end'
@@ -63,8 +64,12 @@ if [ "$settings_pinned" = no ] && {
       [ ! -w "$(dirname "$settings_target")" ]; } ||
     { [ -d "$claude_dir" ] && [ ! -w "$claude_dir" ]; }
 }; then
+  model_hint="$(jq -r --argjson aliases "$model_aliases" \
+    'if (.model | type) == "string" and $aliases[.model] != null
+     then " and \"model\": \"\($aliases[.model])\"" else "" end' \
+    "$claude_settings" 2>/dev/null || :)"
   printf '%s\n' \
-    "$claude_settings or its directory is read-only; make it writable or set \"advisorModel\": \"$fable_model\" there. No files were changed." >&2
+    "$claude_settings or its directory is read-only; make it writable or set \"advisorModel\": \"$fable_model\"$model_hint there. No files were changed." >&2
   exit 73
 fi
 local_bin_dir="$HOME/.local/bin"

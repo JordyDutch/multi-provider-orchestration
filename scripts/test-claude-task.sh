@@ -79,17 +79,19 @@ chmod +x "$test_dir/bin/claude"
 printf 'Edit only src/example.txt. Literal shell text: $(touch %s/injection) and `date`.\n' \
   "$test_dir" >"$test_dir/brief"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{}},"result":"Changed src/example.txt"}' >"$test_dir/opus.json"
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-fable-5-1":{}},"result":"Fable result"}' >"$test_dir/fable.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-fable-5-2":{}},"result":"Fable result"}' >"$test_dir/fable.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5-5":{}},"result":"Sonnet result"}' >"$test_dir/sonnet.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{}},"result":"Haiku result"}' >"$test_dir/haiku.json"
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-fable-5-1":{}},"result":"Haiku advised result"}' >"$test_dir/advisor.json"
-# Local /advisor output, recorded from Claude Code 2.1.304.
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-ok.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-fable-5-2":{}},"result":"Haiku advised result"}' >"$test_dir/advisor.json"
+# Local /advisor output shapes, recorded from Claude Code 2.1.304; the
+# `Advisor: Fable 5.2` line was recorded from 2.1.321 (docs/model-calibration.md).
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.2\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-ok.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"/advisor isn'"'"'t available in this environment."}' >"$test_dir/probe-unavailable.json"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Opus 5.5\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-opus.json"
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <sonnet|off>"}' >"$test_dir/probe-excluded.json"
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{"claude-haiku-5-5":{}},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-inference.json"
-printf '%s\n' '{"type":"result","subtype":"error_during_execution","is_error":true,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-error.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.1\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-stale.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{},"result":"Advisor: Fable 5.2\nUsage: /advisor <sonnet|off>"}' >"$test_dir/probe-excluded.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{"claude-haiku-5-5":{}},"result":"Advisor: Fable 5.2\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-inference.json"
+printf '%s\n' '{"type":"result","subtype":"error_during_execution","is_error":true,"modelUsage":{},"result":"Advisor: Fable 5.2\nUsage: /advisor <fable|opus|sonnet|off>"}' >"$test_dir/probe-error.json"
 
 export PATH="$test_dir/bin:/usr/bin:/bin"
 export CAPTURE_ARGS="$test_dir/args"
@@ -147,11 +149,11 @@ done
 FAKE_RESULT="$test_dir/fable.json" "$test_dir/bin/fable-task" --edit --effort xhigh \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Fable result' "$test_dir/out"
-grep -qxF 'claude-fable-5-1' "$test_dir/args"
+grep -qxF 'claude-fable-5-2' "$test_dir/args"
 grep -qxF 'xhigh' "$test_dir/args"
 grep -qxF 'acceptEdits' "$test_dir/args"
 grep -qxF 'Read,Grep,Glob,Edit,Write' "$test_dir/args"
-grep -qF 'model=claude-fable-5-1 effort=xhigh mode=edit' "$test_dir/err"
+grep -qF 'model=claude-fable-5-2 effort=xhigh mode=edit' "$test_dir/err"
 FAKE_RESULT="$test_dir/sonnet.json" "$test_dir/bin/sonnet-task" \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Sonnet result' "$test_dir/out"
@@ -201,12 +203,12 @@ FAKE_RESULT="$test_dir/advisor.json" "$test_dir/bin/haiku-task" --advisor \
 grep -qxF 'Haiku advised result' "$test_dir/out"
 grep -qxF 'claude-haiku-5-5' "$test_dir/args"
 grep -qxF -- '--settings' "$test_dir/args"
-grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
+grep -qxF '{"advisorModel":"claude-fable-5-2"}' "$test_dir/args"
 grep -qF 'An advisor tool backed by a stronger model is available.' "$test_dir/stdin"
 grep -qF 'before reporting completion.' "$test_dir/stdin"
 grep -qF 'Literal shell text:' "$test_dir/stdin"
-grep -qF 'model=claude-haiku-5-5 effort=low mode=read-only advisor=claude-fable-5-1' "$test_dir/err"
-grep -qF 'advisor=claude-fable-5-1 (called)' "$test_dir/err"
+grep -qF 'model=claude-haiku-5-5 effort=low mode=read-only advisor=claude-fable-5-2' "$test_dir/err"
+grep -qF 'advisor=claude-fable-5-2 (called)' "$test_dir/err"
 # The probe runs the same model and restricted settings, without the brief.
 grep -qxF '/advisor' "$CAPTURE_PROBE_STDIN"
 if grep -qF 'Literal shell text:' "$CAPTURE_PROBE_STDIN"; then
@@ -214,7 +216,7 @@ if grep -qF 'Literal shell text:' "$CAPTURE_PROBE_STDIN"; then
   exit 1
 fi
 for probe_arg in --print claude-haiku-5-5 low --restricted --strict-mcp-config \
-  --no-session-persistence --settings '{"advisorModel":"claude-fable-5-1"}' \
+  --no-session-persistence --settings '{"advisorModel":"claude-fable-5-2"}' \
   dontAsk none; do
   grep -qxF -- "$probe_arg" "$CAPTURE_PROBE_ARGS"
 done
@@ -229,13 +231,13 @@ done
 FAKE_RESULT="$test_dir/haiku.json" "$test_dir/bin/haiku-task" --advisor \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Haiku result' "$test_dir/out"
-grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
-grep -qF 'advisor=claude-fable-5-1 (not called)' "$test_dir/err"
+grep -qxF '{"advisorModel":"claude-fable-5-2"}' "$test_dir/args"
+grep -qF 'advisor=claude-fable-5-2 (not called)' "$test_dir/err"
 FAKE_RESULT="$test_dir/fable.json" "$test_dir/bin/fable-task" --advisor \
   "$test_dir/work dir" "$test_dir/brief" >"$test_dir/out" 2>"$test_dir/err"
 grep -qxF 'Fable result' "$test_dir/out"
-grep -qxF '{"advisorModel":"claude-fable-5-1"}' "$test_dir/args"
-grep -qF 'advisor=claude-fable-5-1 (not distinguishable)' "$test_dir/err"
+grep -qxF '{"advisorModel":"claude-fable-5-2"}' "$test_dir/args"
+grep -qF 'advisor=claude-fable-5-2 (not distinguishable)' "$test_dir/err"
 # Boolean off values, in any casing, do not disable the advisor.
 for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TRACK \
   CLAUDE_CODE_USE_BEDROCK CLAUDE_CODE_USE_MANTLE CLAUDE_CODE_USE_ANTHROPIC_AWS \
@@ -248,7 +250,7 @@ for advisor_var in CLAUDE_CODE_DISABLE_ADVISOR_TOOL DISABLE_GROWTHBOOK DO_NOT_TR
         >"$test_dir/out" 2>"$test_dir/err"
     )
     grep -qxF 'Haiku advised result' "$test_dir/out"
-    grep -qF 'advisor=claude-fable-5-1 (called)' "$test_dir/err"
+    grep -qF 'advisor=claude-fable-5-2 (called)' "$test_dir/err"
   done
 done
 (DISABLE_TELEMETRY=1 FAKE_RESULT="$test_dir/haiku.json" \
@@ -281,12 +283,12 @@ expect_no_inference() {
 }
 
 expect_no_inference "$test_dir/bin/unknown-task" "$test_dir/work dir" "$test_dir/brief"
-expect_no_inference "$test_dir/bin/opus-task" --model claude-fable-5-1 "$test_dir/work dir" "$test_dir/brief"
+expect_no_inference "$test_dir/bin/opus-task" --model claude-fable-5-2 "$test_dir/work dir" "$test_dir/brief"
 expect_no_inference "$test_dir/bin/opus-task" --effort extreme "$test_dir/work dir" "$test_dir/brief"
 expect_no_inference "$test_dir/bin/opus-task" --effort
 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/missing" "$test_dir/brief"
 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/missing"
-(CLAUDE_TASK_MODEL=claude-fable-5-1 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief")
+(CLAUDE_TASK_MODEL=claude-fable-5-2 expect_no_inference "$test_dir/bin/opus-task" "$test_dir/work dir" "$test_dir/brief")
 (CLAUDE_TASK_MODEL=claude-sonnet-5 expect_no_inference "$test_dir/bin/sonnet-task" "$test_dir/work dir" "$test_dir/brief")
 expect_no_inference "$test_dir/bin/sonnet-task" --model claude-sonnet-5 "$test_dir/work dir" "$test_dir/brief"
 expect_no_inference "$test_dir/bin/sonnet-task" --effort ultracode "$test_dir/work dir" "$test_dir/brief"
@@ -333,11 +335,11 @@ grep -qF 'DISABLE_TELEMETRY' "$test_dir/err"
 (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=false expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
 grep -qF 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' "$test_dir/err"
 # Managed settings act after the environment check; the restricted /advisor
-# probe must confirm an allowed Fable 5.1 advisor before inference.
-for probe_case in unavailable opus excluded inference error; do
+# probe must confirm an allowed Fable 5.2 advisor before inference.
+for probe_case in unavailable opus stale excluded inference error; do
   (FAKE_PROBE_RESULT="$test_dir/probe-$probe_case.json" \
     expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
-  grep -qF 'could not confirm an available Fable 5.1 advisor' "$test_dir/err"
+  grep -qF 'could not confirm an available Fable 5.2 advisor' "$test_dir/err"
 done
 (FAKE_PROBE_RESULT="$test_dir/probe-unavailable.json" \
   expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
@@ -345,6 +347,9 @@ grep -qF "(reported: /advisor isn't available in this environment.)" "$test_dir/
 (FAKE_PROBE_RESULT="$test_dir/probe-opus.json" \
   expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
 grep -qF '(reported: Advisor: Opus 5.5)' "$test_dir/err"
+(FAKE_PROBE_RESULT="$test_dir/probe-stale.json" \
+  expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
+grep -qF '(reported: Advisor: Fable 5.1)' "$test_dir/err"
 (FAKE_PROBE_RESULT="$test_dir/probe-inference.json" \
   expect_no_inference "$test_dir/bin/haiku-task" --advisor "$test_dir/work dir" "$test_dir/brief")
 grep -qF '(reported: no valid /advisor result)' "$test_dir/err"
@@ -397,9 +402,9 @@ grep -qF '"is_error":true' "$test_dir/err"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[{"tool":"Write"}],"modelUsage":{"claude-opus-5-5":{}},"result":"partial"}' >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
 grep -qF '"denial_count":1' "$test_dir/err"
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{"claude-fable-5-1":{}},"result":"wrong model"}' >"$test_dir/bad.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"modelUsage":{"claude-fable-5-2":{}},"result":"wrong model"}' >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
-grep -qF '"modelUsage_keys":["claude-fable-5-1"]' "$test_dir/err"
+grep -qF '"modelUsage_keys":["claude-fable-5-2"]' "$test_dir/err"
 if grep -qF 'wrong model' "$test_dir/err"; then
   printf '%s\n' 'Unvalidated result text leaked into diagnostics.' >&2
   exit 1
@@ -408,7 +413,7 @@ printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"result":"n
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
 cat "$test_dir/opus.json" "$test_dir/opus.json" >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
-printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{},"claude-fable-5-1":{}},"result":"mixed models"}' >"$test_dir/bad.json"
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-opus-5-5":{},"claude-fable-5-2":{}},"result":"mixed models"}' >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result)
 
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-sonnet-5":{}},"result":"older Sonnet"}' >"$test_dir/bad.json"
@@ -423,10 +428,10 @@ grep -qF '"modelUsage_keys":["claude-opus-5-5"]' "$test_dir/err"
 
 # Advisor usage is accepted only when --advisor was requested, and only Fable.
 (FAKE_RESULT="$test_dir/advisor.json" expect_bad_result haiku-task)
-grep -qF '"modelUsage_keys":["claude-fable-5-1","claude-haiku-5-5"]' "$test_dir/err"
+grep -qF '"modelUsage_keys":["claude-fable-5-2","claude-haiku-5-5"]' "$test_dir/err"
 grep -qF 'advisor=off' "$test_dir/err"
 (FAKE_RESULT="$test_dir/fable.json" expect_bad_result haiku-task --advisor)
-grep -qF '"modelUsage_keys":["claude-fable-5-1"]' "$test_dir/err"
+grep -qF '"modelUsage_keys":["claude-fable-5-2"]' "$test_dir/err"
 printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-sonnet-5-5":{}},"result":"wrong advisor"}' >"$test_dir/bad.json"
 (FAKE_RESULT="$test_dir/bad.json" expect_bad_result haiku-task --advisor)
 grep -qF '"modelUsage_keys":["claude-haiku-5-5","claude-sonnet-5-5"]' "$test_dir/err"
@@ -434,6 +439,9 @@ if grep -qF 'wrong advisor' "$test_dir/err"; then
   printf '%s\n' 'Unvalidated advisor result text leaked into diagnostics.' >&2
   exit 1
 fi
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false,"permission_denials":[],"modelUsage":{"claude-haiku-5-5":{},"claude-fable-5-1":{}},"result":"stale advisor"}' >"$test_dir/bad.json"
+(FAKE_RESULT="$test_dir/bad.json" expect_bad_result haiku-task --advisor)
+grep -qF '"modelUsage_keys":["claude-fable-5-1","claude-haiku-5-5"]' "$test_dir/err"
 (FAKE_RESULT="$test_dir/opus.json" expect_bad_result haiku-task)
 grep -qF '"modelUsage_keys":["claude-opus-5-5"]' "$test_dir/err"
 

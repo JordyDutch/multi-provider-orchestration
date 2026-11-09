@@ -15,6 +15,7 @@ read every playbook by default.
 | Parallel or multi-agent work | [`rules/execution.md`](rules/execution.md) | Only independent scopes, bounded fan-out, no unapproved nesting |
 | Assigning a specialist | [`rules/routing.md`](rules/routing.md) and [`rules/delegation.md`](rules/delegation.md) | Explicit model and effort, compact brief, owner integrates |
 | Source-grounded writing, visual interpretation/QA, or bounded browser/app work | Routing, delegation, and [`rules/terra.md`](rules/terra.md) | Terra low/medium; verify tools, authorization, and observable results |
+| Fable 5.2 as owner, specialist, reviewer, or advisor | [`rules/fable.md`](rules/fable.md) | Set high explicitly; briefs applied as written; report declined scopes |
 | Claude-led native subagents, workflow agents, or advisor setup | [`rules/claude-native.md`](rules/claude-native.md) | Pinned agent types or exact workflow model IDs; Fable advisor at decision points |
 
 ## Canonical rules

@@ -54,7 +54,7 @@ Mandatory reviews apply regardless of savings.
   `rules/routing.md` to choose and `rules/delegation.md` to launch workers;
   pin native Claude workers and the advisor via `rules/claude-native.md`.
   The owner integrates and verifies; delegation never transfers ownership.
-- Pin exact Claude IDs: `claude-opus-5-5`, `claude-fable-5-1`,
+- Pin exact Claude IDs: `claude-opus-5-5`, `claude-fable-5-2`,
   `claude-sonnet-5-5`, and `claude-haiku-5-5`; never silently use older models.
 - Require an opposite-provider review for security, authentication,
   authorization, funds, destructive changes, data-loss risk, costly-to-reverse
