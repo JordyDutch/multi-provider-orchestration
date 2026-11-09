@@ -37,7 +37,7 @@ the affected scope. Never silently substitute models. Use supported effort only.
 | Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis |
 | Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
 | Codex writing/visual/app specialist | GPT-6.1 Terra (`gpt-6.1-terra`) | `low` | Source-grounded writing, image/chart interpretation, visual QA, bounded app work; medium for multiple sources/screens or steps; [terra.md](terra.md) |
-| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` | Complex work assigned by Astra, direct Claude-led orchestration, and cross-cutting reviews |
+| Claude owner/specialist | Fable 5.2 (`claude-fable-5-2`) | `high` | Complex work assigned by Astra, direct Claude-led orchestration, and cross-cutting reviews; [fable.md](fable.md) |
 | Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` | Substantive implementation, frontend/UX, and independent review |
 | Claude efficient | Sonnet 5.5 (`claude-sonnet-5-5`) | `low` | Mechanical edits via `sonnet-task` or the medium-pinned `sonnet-worker`; medium for batches |
 | Claude fast | Haiku 5.5 (`claude-haiku-5-5`) | `low` | Read-only search and extraction via `haiku-scout` or `haiku-task`; no tallies |

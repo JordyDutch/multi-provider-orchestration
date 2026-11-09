@@ -47,7 +47,7 @@ grep -qF 'earlier higher-level instruction explicitly states' \
 grep -qF 'read `.agents/AGENTS.md`' "$repo_dir/AGENTS.md"
 grep -qF "MPO_SHARED_BASELINE_V1" "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Pin exact Claude IDs: `claude-opus-5-5`' "$repo_dir/.agents/AGENTS.md"
-grep -qF '`claude-fable-5-1`' "$repo_dir/.agents/AGENTS.md"
+grep -qF '`claude-fable-5-2`' "$repo_dir/.agents/AGENTS.md"
 grep -qF '`claude-haiku-5-5`' "$repo_dir/.agents/AGENTS.md"
 grep -qF 'rules/claude-native.md' "$repo_dir/.agents/AGENTS.md"
 grep -qF "no-playbook route in Codex-led work" \
@@ -103,8 +103,13 @@ grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '| Claude owner/specialist | Fable 5.1 (`claude-fable-5-1`) | `high` |' \
+grep -qF '| Claude owner/specialist | Fable 5.2 (`claude-fable-5-2`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
+for fable_link_source in routing delegation reviews claude-native; do
+  grep -qF '[fable.md](fable.md)' "$repo_dir/.agents/rules/$fable_link_source.md"
+done
+grep -qF 'Fable 5.2 (`claude-fable-5-2`)' "$repo_dir/.agents/rules/fable.md"
+grep -qF '(.agents/rules/fable.md)' "$repo_dir/README.md"
 grep -qF '| Claude coding/review | Opus 5.5 (`claude-opus-5-5`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` |' \
@@ -131,7 +136,7 @@ grep -qF '| Claude fast | Haiku 5.5 (`claude-haiku-5-5`) | `low` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '[claude-native.md](claude-native.md)' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '{ "advisorModel": "claude-fable-5-1" }' \
+grep -qF '{ "advisorModel": "claude-fable-5-2" }' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF 'omit the Agent tool'"'"'s `model`' \
   "$repo_dir/.agents/rules/claude-native.md"
@@ -139,10 +144,10 @@ grep -qF 'There is no per-agent switch' \
   "$repo_dir/.agents/rules/claude-native.md"
 grep -qF 'When `CLAUDE_CONFIG_DIR` is set, the Claude files go under that absolute path' \
   "$repo_dir/.agents/rules/setup.md"
-grep -qF 'The installer sets `advisorModel` to `claude-fable-5-1` in' \
+grep -qF 'The installer sets `advisorModel` to `claude-fable-5-2` in' \
   "$repo_dir/.agents/rules/setup.md"
 grep -qF 'The installer pins it in' "$repo_dir/.agents/rules/claude-native.md"
-grep -qF 'pins `"advisorModel": "claude-fable-5-1"` in `~/.claude/settings.json`' \
+grep -qF 'pins `"advisorModel": "claude-fable-5-2"` in `~/.claude/settings.json`' \
   "$repo_dir/README.md"
 if grep -qF 'never edits `~/.claude/settings.json`' "$repo_dir/.agents/rules/setup.md" || \
   grep -qF 'the installer does not edit that file' "$repo_dir/README.md"; then
@@ -151,7 +156,7 @@ if grep -qF 'never edits `~/.claude/settings.json`' "$repo_dir/.agents/rules/set
 fi
 grep -qF 'then runs a local `/advisor` check under the same restricted' \
   "$repo_dir/.agents/rules/claude-native.md"
-grep -qF '`--advisor` attaches the pinned Fable 5.1 advisor' \
+grep -qF '`--advisor` attaches the pinned Fable 5.2 advisor' \
   "$repo_dir/.agents/rules/delegation.md"
 
 # Each Claude agent type pins one exact model and effort; aliases such as
@@ -165,7 +170,7 @@ for claude_agent in "$@"; do
     haiku-scout) agent_model=claude-haiku-5-5 agent_effort=low agent_tools='Read, Grep, Glob' ;;
     sonnet-worker) agent_model=claude-sonnet-5-5 agent_effort=medium agent_tools="$worker_tools" ;;
     opus-worker) agent_model=claude-opus-5-5 agent_effort=high agent_tools="$worker_tools" ;;
-    fable-specialist) agent_model=claude-fable-5-1 agent_effort=high agent_tools="$worker_tools" ;;
+    fable-specialist) agent_model=claude-fable-5-2 agent_effort=high agent_tools="$worker_tools" ;;
     *) printf 'Unexpected Claude agent definition: %s\n' "$claude_agent" >&2; exit 1 ;;
   esac
   # Check pins inside the frontmatter only, never in the prompt body.
@@ -320,7 +325,7 @@ test "$#" -eq 1
 jq -e '.advisorModel == "fable" and .model == "opus"' "$1" >/dev/null
 jq -e '. == {
   model: "claude-opus-5-5",
-  advisorModel: "claude-fable-5-1",
+  advisorModel: "claude-fable-5-2",
   permissions: {allow: ["Bash(ls)"]}
 }' "$test_home/.claude/settings.json" >/dev/null
 test "$(find "$test_home/.claude/settings.json" -perm 600 -print)" = \
@@ -347,13 +352,13 @@ for source_agent in "$repo_dir"/.claude/agents/*.md; do
   cmp -s "$source_agent" "$fresh_home/.claude/agents/$agent_file"
 done
 test ! -e "$fresh_home/.codex/playbooks"
-jq -e '. == {advisorModel: "claude-fable-5-1"}' \
+jq -e '. == {advisorModel: "claude-fable-5-2"}' \
   "$fresh_home/.claude/settings.json" >/dev/null
 
 # Pinned settings stay byte-identical; other model values are the user's choice.
 pinned_home="$test_home/pinned-home"
 mkdir -p "$pinned_home/.claude"
-printf '%s\n' '{"advisorModel":"claude-fable-5-1","model":"opusplan"}' \
+printf '%s\n' '{"advisorModel":"claude-fable-5-2","model":"opusplan"}' \
   >"$pinned_home/.claude/settings.json"
 cp "$pinned_home/.claude/settings.json" "$test_home/pinned-settings.json"
 HOME="$pinned_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
@@ -369,21 +374,34 @@ ln -s ../dotfiles/settings.json "$linked_home/.claude/settings.json"
 HOME="$linked_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
 test -L "$linked_home/.claude/settings.json"
 test "$(readlink "$linked_home/.claude/settings.json")" = ../dotfiles/settings.json
-jq -e '. == {theme: "dark", model: "claude-sonnet-5-5", advisorModel: "claude-fable-5-1"}' \
+jq -e '. == {theme: "dark", model: "claude-sonnet-5-5", advisorModel: "claude-fable-5-2"}' \
   "$linked_home/dotfiles/settings.json" >/dev/null
 set -- "$linked_home/dotfiles/.settings.json."*
 test ! -e "$1"
 
-# Each bare alias maps to its exact ID.
-for model_pin in haiku:claude-haiku-5-5 fable:claude-fable-5-1; do
+# Each bare alias maps to its exact ID; the superseded Fable pin moves forward.
+for model_pin in haiku:claude-haiku-5-5 fable:claude-fable-5-2 \
+  claude-fable-5-1:claude-fable-5-2; do
   alias_home="$test_home/alias-home-${model_pin%%:*}"
   mkdir -p "$alias_home/.claude"
   printf '{"model":"%s"}\n' "${model_pin%%:*}" >"$alias_home/.claude/settings.json"
   HOME="$alias_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
   jq -e --arg model "${model_pin#*:}" \
-    '. == {model: $model, advisorModel: "claude-fable-5-1"}' \
+    '. == {model: $model, advisorModel: "claude-fable-5-2"}' \
     "$alias_home/.claude/settings.json" >/dev/null
 done
+
+# A superseded advisor pin is replaced and the previous file is backed up.
+stale_home="$test_home/stale-advisor-home"
+mkdir -p "$stale_home/.claude"
+printf '%s\n' '{"advisorModel":"claude-fable-5-1","model":"opusplan"}' \
+  >"$stale_home/.claude/settings.json"
+HOME="$stale_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+jq -e '. == {advisorModel: "claude-fable-5-2", model: "opusplan"}' \
+  "$stale_home/.claude/settings.json" >/dev/null
+set -- "$stale_home/.claude/settings.json.backup."*
+test "$#" -eq 1
+jq -e '.advisorModel == "claude-fable-5-1"' "$1" >/dev/null
 
 # A failed settings transformation keeps the original file and removes the
 # temporary copy.
@@ -433,14 +451,25 @@ if [ "$(id -u)" -ne 0 ]; then
   HOME="$readonly_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" \
     >/dev/null 2>"$test_home/readonly.stderr" || readonly_status=$?
   test "$readonly_status" -eq 73
-  grep -qF 'or its directory is read-only; make it writable or set "advisorModel": "claude-fable-5-1" there. No files were changed.' \
+  grep -qF 'or its directory is read-only; make it writable or set "advisorModel": "claude-fable-5-2" there. No files were changed.' \
     "$test_home/readonly.stderr"
   test "$(cat "$readonly_home/.claude/settings.json")" = '{"advisorModel":"fable"}'
   test ! -e "$readonly_home/.codex"
   chmod 600 "$readonly_home/.claude/settings.json"
-  printf '%s\n' '{"advisorModel":"claude-fable-5-1"}' >"$readonly_home/.claude/settings.json"
+  printf '%s\n' '{"advisorModel":"claude-fable-5-2"}' >"$readonly_home/.claude/settings.json"
   chmod 400 "$readonly_home/.claude/settings.json"
   HOME="$readonly_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" >/dev/null
+  chmod 600 "$readonly_home/.claude/settings.json"
+  # A stale model pin alone is also unpinned; the message names both keys.
+  printf '%s\n' '{"advisorModel":"claude-fable-5-2","model":"claude-fable-5-1"}' \
+    >"$readonly_home/.claude/settings.json"
+  chmod 400 "$readonly_home/.claude/settings.json"
+  readonly_status=0
+  HOME="$readonly_home" SHELL="$test_shell" "$repo_dir/scripts/install-global.sh" \
+    >/dev/null 2>"$test_home/readonly-model.stderr" || readonly_status=$?
+  test "$readonly_status" -eq 73
+  grep -qF 'set "advisorModel": "claude-fable-5-2" and "model": "claude-fable-5-2" there. No files were changed.' \
+    "$test_home/readonly-model.stderr"
   chmod 600 "$readonly_home/.claude/settings.json"
 
   # A missing file in a read-only settings directory also stops before writes.
@@ -468,7 +497,7 @@ test "$dangling_status" -eq 65
 test ! -e "$dangling_home/.codex"
 
 # Settings that are not a JSON object stop the install before any write.
-for invalid_settings in '{"advisorModel":' '["claude-fable-5-1"]' \
+for invalid_settings in '{"advisorModel":' '["claude-fable-5-2"]' \
   '[] {"keep":true}' '{"a":1} {"b":2}' ''; do
   invalid_home="$test_home/invalid-settings-home"
   rm -rf "$invalid_home"
@@ -497,7 +526,7 @@ for source_agent in "$repo_dir"/.claude/agents/*.md; do
   cmp -s "$source_agent" "$config_dir/agents/$agent_file"
 done
 test "$(grep -c -xF '@~/.codex/AGENTS.md' "$config_dir/CLAUDE.md")" -eq 1
-jq -e '.advisorModel == "claude-fable-5-1"' "$config_dir/settings.json" >/dev/null
+jq -e '.advisorModel == "claude-fable-5-2"' "$config_dir/settings.json" >/dev/null
 test ! -e "$config_home/.claude"
 cmp -s "$repo_dir/.agents/AGENTS.md" "$config_home/.codex/AGENTS.md"
 
@@ -668,7 +697,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/fable.stdin" \
   "$fake_bin/fable-review" "Review only." >/dev/null
 
-grep -qxF "claude-fable-5-1" "$test_home/fable.args"
+grep -qxF "claude-fable-5-2" "$test_home/fable.args"
 grep -qxF "xhigh" "$test_home/fable.args"
 grep -qxF -- "--tools" "$test_home/fable.args"
 grep -qxF "Read,Grep,Glob" "$test_home/fable.args"
@@ -706,12 +735,12 @@ test ! -e "$test_home/oversized.args"
 
 PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
-  CLAUDE_REVIEW_MODEL=claude-fable-5-1 \
+  CLAUDE_REVIEW_MODEL=claude-fable-5-2 \
   CAPTURE_ARGS="$test_home/fable-env.args" \
   CAPTURE_STDIN="$test_home/fable-env.stdin" \
   "$fake_bin/claude-review" "Review only." >/dev/null
 
-grep -qxF "claude-fable-5-1" "$test_home/fable-env.args"
+grep -qxF "claude-fable-5-2" "$test_home/fable-env.args"
 grep -qxF "xhigh" "$test_home/fable-env.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/fable-env.stdin"
 
@@ -787,8 +816,8 @@ for invalid_result in \
   '.subtype="error" | .is_error=true' \
   '.permission_denials=[{tool:"Write"}]' \
   '.modelUsage={"claude-opus-5":{}}' \
-  '.modelUsage={"claude-fable-5-1":{}}' \
-  '.modelUsage={"claude-opus-5-5":{},"claude-fable-5-1":{}}' \
+  '.modelUsage={"claude-fable-5-2":{}}' \
+  '.modelUsage={"claude-opus-5-5":{},"claude-fable-5-2":{}}' \
   'del(.modelUsage)' \
   '.result=""'; do
   jq "$invalid_result" "$test_home/base-result.json" >"$test_home/bad-result.json"
@@ -970,25 +999,31 @@ for rejected_opus_model in claude-opus-4-8 claude-opus-5 opus claude-opus-5-5-la
     test "$?" -eq 64
   fi
 
-  grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
+  grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-2" \
     "$test_home/old-opus.stderr"
   test ! -e "$test_home/old-opus.args"
 done
 
-if PATH="$fake_bin:/usr/bin:/bin" \
-  HOME="$test_home" \
-  CLAUDE_REVIEW_MODEL=claude-fable-5 \
-  CAPTURE_ARGS="$test_home/old-fable.args" \
-  CAPTURE_STDIN="$test_home/old-fable.stdin" \
-  "$fake_bin/claude-review" "Review only." \
-  >"$test_home/old-fable.stdout" 2>"$test_home/old-fable.stderr"; then
-  printf '%s\n' "Expected an older Fable model ID to be rejected." >&2
-  exit 1
-fi
+for rejected_fable_model in claude-fable-5 claude-fable-5-1; do
+  rm -f "$test_home/old-fable.args" "$test_home/old-fable.stderr"
+  if PATH="$fake_bin:/usr/bin:/bin" \
+    HOME="$test_home" \
+    CLAUDE_REVIEW_MODEL="$rejected_fable_model" \
+    CAPTURE_ARGS="$test_home/old-fable.args" \
+    CAPTURE_STDIN="$test_home/old-fable.stdin" \
+    "$fake_bin/claude-review" "Review only." \
+    >"$test_home/old-fable.stdout" 2>"$test_home/old-fable.stderr"; then
+    printf 'Expected an older Fable model ID to be rejected: %s\n' \
+      "$rejected_fable_model" >&2
+    exit 1
+  else
+    test "$?" -eq 64
+  fi
 
-grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
-  "$test_home/old-fable.stderr"
-test ! -e "$test_home/old-fable.args"
+  grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-2" \
+    "$test_home/old-fable.stderr"
+  test ! -e "$test_home/old-fable.args"
+done
 
 if PATH="$fake_bin:/usr/bin:/bin" \
   HOME="$test_home" \
@@ -1002,7 +1037,7 @@ if PATH="$fake_bin:/usr/bin:/bin" \
   exit 1
 fi
 
-grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-1" \
+grep -qF "model must be pinned to claude-opus-5-5 or claude-fable-5-2" \
   "$test_home/fable-alias.stderr"
 test ! -e "$test_home/fable-alias.args"
 

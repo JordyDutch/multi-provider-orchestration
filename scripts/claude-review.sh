@@ -4,7 +4,7 @@ set -eu
 
 case "$(basename "$0")" in
   fable-review)
-    default_model="claude-fable-5-1"
+    default_model="claude-fable-5-2"
     ;;
   *)
     default_model="claude-opus-5-5"
@@ -21,11 +21,11 @@ case "$model" in
   claude-opus-5-5)
     default_effort="high"
     ;;
-  claude-fable-5-1)
+  claude-fable-5-2)
     default_effort="xhigh"
     ;;
   *)
-    echo "Claude review unavailable: model must be pinned to claude-opus-5-5 or claude-fable-5-1." >&2
+    echo "Claude review unavailable: model must be pinned to claude-opus-5-5 or claude-fable-5-2." >&2
     exit 64
     ;;
 esac

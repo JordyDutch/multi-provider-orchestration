@@ -113,6 +113,22 @@ settings selected a Fable advisor.
 
 These are capability checks, not quality, speed, or cost rankings.
 
+## Fable 5.2 advisor preflight check: 2026-11-09
+
+Claude Code 2.1.321, with the restricted `/advisor` print probe that the
+`--advisor` helper uses, requested through a `claude-haiku-5-5` session:
+
+- With `--settings '{"advisorModel":"claude-fable-5-2"}'` it returned locally
+  with empty `modelUsage` and printed `Advisor: Fable 5.2` and
+  `Usage: /advisor <fable|opus|sonnet|off>`.
+- With `claude-fable-5-1` it still printed `Advisor: Fable 5.1`, so the first
+  line identifies the pinned version and the helper's exact match rejects a
+  stale pin.
+
+The [models overview](https://platform.claude.com/docs/en/models/overview)
+listed `claude-fable-5-2` as current and Fable 5.1 as legacy on that date. This
+is a capability check; no inference ran and it ranks nothing.
+
 ## Terra visual route check: 2026-10-27
 
 The owner rendered an isolated synthetic PNG with two product cards. Panel A's

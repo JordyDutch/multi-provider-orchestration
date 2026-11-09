@@ -1,8 +1,8 @@
 ---
 name: fable-specialist
-description: Pinned Fable 5.1 specialist at high effort for architecture input, difficult diagnosis, conflicting evidence, and complex analysis or implementation. Edits only when the brief authorizes them. Fable usage can bill to usage credits.
+description: Pinned Fable 5.2 specialist at high effort for architecture input, difficult diagnosis, conflicting evidence, and complex analysis or implementation. Edits only when the brief authorizes them. Fable usage can bill to usage credits.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: claude-fable-5-1
+model: claude-fable-5-2
 effort: high
 ---
 

@@ -31,7 +31,7 @@ restart a session that started before that directory existed.
 | `haiku-scout` | `claude-haiku-5-5`, low | Read-only search, inventory, extraction, classification |
 | `sonnet-worker` | `claude-sonnet-5-5`, medium | Mechanical edits and batches with a decisive check |
 | `opus-worker` | `claude-opus-5-5`, high | Scoped behavioral code, tests, frontend/UX |
-| `fable-specialist` | `claude-fable-5-1`, high | Architecture input, hard diagnosis, complex work |
+| `fable-specialist` | `claude-fable-5-2`, high | Architecture input, hard diagnosis, complex work |
 
 Spawn them by `subagent_type` and omit the Agent tool's `model`; a passed model
 overrides the pin. That parameter accepts only aliases, so use it only after
@@ -49,19 +49,22 @@ with the full conversation. The installer pins it in
 `~/.claude/settings.json`:
 
 ```json
-{ "advisorModel": "claude-fable-5-1" }
+{ "advisorModel": "claude-fable-5-2" }
 ```
 
 `/advisor fable` saves the alias instead; the next installer run, such as the
-next day's refresh, restores the pin, as does `/advisor claude-fable-5-1`. An advisor must rank at or above the model
-calling it. Fable 5.1 qualifies for every Claude main model; a Fable-led
-session can only pair it with itself. See
-[advisor pairings](https://code.claude.com/docs/en/advisor#choose-an-advisor-model).
+next day's refresh, restores the pin, as does `/advisor claude-fable-5-2`. An advisor must rank at or above the model
+calling it. Fable 5.2 qualifies for every Claude main model; a Fable 5.2
+session accepts only Fable 5.2 as its advisor, so move the main model, the
+advisor pin, and every helper pin together. See
+[advisor pairings](https://code.claude.com/docs/en/advisor#choose-an-advisor-model)
+and the [Fable 5.2 pairing rule](https://platform.claude.com/docs/en/models/fable-5-2/migration-guide#fable-5-2-advisor-pairs).
 
-- Fable 5.1 owns Claude-led sessions under [routing.md](routing.md). An Opus
+- Fable 5.2 owns Claude-led sessions under [routing.md](routing.md) and
+  [fable.md](fable.md). An Opus
   5.5 or Sonnet 5.5 session keeps the Fable advisor on for routine decisions;
   before work that routing assigns to the Fable owner, switch with
-  `/model claude-fable-5-1` or hand off. Advice neither owns the work nor
+  `/model claude-fable-5-2` or hand off. Advice neither owns the work nor
   replaces a review required by [reviews.md](reviews.md).
 - Subagents inherit the advisor when their own model passes the pairing check.
   There is no per-agent switch; each call reads that worker's whole context at
@@ -76,15 +79,15 @@ session can only pair it with itself. See
   consent through `/model fable`.
 
 The task helpers use restricted mode, which loads only managed settings and
-`--settings`. Pass `--advisor` to attach the pinned Fable 5.1 advisor through
+`--settings`. Pass `--advisor` to attach the pinned Fable 5.2 advisor through
 `--settings`. Before inference, the helper rejects a disabling variable in its
 environment, then runs a local `/advisor` check under the same restricted
-settings. It stops unless that check reports Fable 5.1 as an allowed advisor,
+settings. It stops unless that check reports Fable 5.2 as an allowed advisor,
 which also covers managed `env`, `advisorModel`, and `availableModels`
 settings. It accepts usage from the executor plus optionally
-`claude-fable-5-1` and reports whether the advisor was called; missing Fable
+`claude-fable-5-2` and reports whether the advisor was called; missing Fable
 consent may still show only as `(not called)`. The helper never enables a
-fallback model; a managed fallback to Fable 5.1 would look like advisor use.
+fallback model; a managed fallback to Fable 5.2 would look like advisor use.
 
 ## Verify
 

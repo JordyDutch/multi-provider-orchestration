@@ -118,9 +118,10 @@ required capability is missing. Their default is read-only; `--edit` enables
 file edits in the assigned working directory, with tests and Git left to the
 entry owner.
 
-The installer sets `advisorModel` to `claude-fable-5-1` in
+The installer sets `advisorModel` to `claude-fable-5-2` in
 `~/.claude/settings.json` and replaces a bare `model` alias (`opus`, `sonnet`,
-`haiku`, or `fable`) with its exact ID; see
+`haiku`, or `fable`) or the superseded `claude-fable-5-1` with its exact
+current ID; see
 [claude-native.md](claude-native.md). It keeps other keys, the file mode, and a
 symlinked file, and backs up a file it changes. Before any write, settings
 that are not one JSON object return 65, missing `jq` returns 69, and an

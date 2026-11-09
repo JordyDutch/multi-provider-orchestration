@@ -20,6 +20,7 @@ Do not launch every available model.
 | Architecture input, difficult diagnosis, complex analysis or implementation | Fable high | `fable-specialist` or `fable-task` |
 
 Use Fable early for difficult scopes; a failed Sol or Opus run is not required.
+Brief it with [fable.md](fable.md).
 Either entry owner may choose any listed worker by fit. Avoid duplicate work;
 review effort follows `reviews.md`. Native Claude workers use the pinned agent
 types in [claude-native.md](claude-native.md).
@@ -87,9 +88,9 @@ by the task. Give parallel writers isolated worktrees or non-overlapping paths.
 Use a narrow working directory containing only the relevant repository context;
 named paths in the brief are instructions, not a file-level sandbox.
 
-The helpers pin `claude-opus-5-5`/high, `claude-fable-5-1`/high,
+The helpers pin `claude-opus-5-5`/high, `claude-fable-5-2`/high,
 `claude-sonnet-5-5`/low (medium for batches), or `claude-haiku-5-5`/low.
-`--advisor` attaches the pinned Fable 5.1 advisor; see
+`--advisor` attaches the pinned Fable 5.2 advisor; see
 [claude-native.md](claude-native.md). They expose file reading/searching, plus
 Edit/Write only in edit mode. Restricted mode confines file tools to the
 working directory and exposes no shell, MCP, or nested-agent tools; tests, Git,
