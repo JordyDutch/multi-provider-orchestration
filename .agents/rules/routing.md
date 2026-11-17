@@ -10,8 +10,8 @@ Verify availability before the first hand-off, route changes, or provider retrie
 codex debug models | jq -r '
   .models[]
   | select(
-      .slug == "gpt-6-astra"
-      or .slug == "gpt-6.1-sol"
+      .slug == "gpt-6.2-astra"
+      or .slug == "gpt-6.2-sol"
       or .slug == "gpt-6-luna"
       or .slug == "gpt-6.1-terra"
     )
@@ -33,8 +33,8 @@ the affected scope. Never silently substitute models. Use supported effort only.
 
 | Role | Model | Starting effort | Use |
 | --- | --- | --- | --- |
-| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` | Planning, task allocation, integration, and final judgement |
-| Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis |
+| Codex owner | GPT-6.2 Astra (`gpt-6.2-astra`) | `high` | Planning, task allocation, integration, and final judgement |
+| Codex implementation specialist | GPT-6.2 Sol (`gpt-6.2-sol`) | `high` | Scoped implementation and behavioral code; xhigh for difficult diagnosis |
 | Codex efficient | GPT-6 Luna (`gpt-6-luna`) | `low` | Clear extraction, classification, transformation, and mechanical work |
 | Codex writing/visual/app specialist | GPT-6.1 Terra (`gpt-6.1-terra`) | `low` | Source-grounded writing, image/chart interpretation, visual QA, bounded app work; medium for multiple sources/screens or steps; [terra.md](terra.md) |
 | Claude owner/specialist | Fable 5.2 (`claude-fable-5-2`) | `high` | Complex work assigned by Astra, direct Claude-led orchestration, and cross-cutting reviews; [fable.md](fable.md) |
@@ -97,7 +97,7 @@ integration decisions to the calling owner.
 ## Live sources
 
 - OpenAI model guidance: `https://developers.openai.com/api/docs/guides/latest-model`
-- GPT-6.1 Sol: `https://developers.openai.com/api/docs/models/gpt-6.1-sol`
+- GPT-6.2 Sol: `https://developers.openai.com/api/docs/models/gpt-6.2-sol`
 - Codex models: `https://learn.chatgpt.com/docs/models`
 - Codex CLI commands: `https://learn.chatgpt.com/docs/developer-commands?surface=cli`
 - Codex subagents: `https://learn.chatgpt.com/docs/agent-configuration/subagents`

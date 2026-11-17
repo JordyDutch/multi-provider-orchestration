@@ -54,7 +54,7 @@ grep -qF "no-playbook route in Codex-led work" \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF 'Luna (`gpt-6-luna`) at `low`' \
   "$repo_dir/.agents/AGENTS.md"
-grep -qF 'Sol (`gpt-6.1-sol`) at' \
+grep -qF 'Sol (`gpt-6.2-sol`) at' \
   "$repo_dir/.agents/AGENTS.md"
 grep -qF '`medium` when bounded judgement is needed' \
   "$repo_dir/.agents/AGENTS.md"
@@ -99,9 +99,9 @@ grep -qF "focused verification; no automatic review" \
   "$repo_dir/.agents/ORCHESTRATION.md"
 grep -qF '`rules/routing.md` is the canonical model and effort ladder' \
   "$repo_dir/.agents/ORCHESTRATION.md"
-grep -qF '| Codex owner | GPT-6 Astra (`gpt-6-astra`) | `high` |' \
+grep -qF '| Codex owner | GPT-6.2 Astra (`gpt-6.2-astra`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF '| Codex implementation specialist | GPT-6.1 Sol (`gpt-6.1-sol`) | `high` |' \
+grep -qF '| Codex implementation specialist | GPT-6.2 Sol (`gpt-6.2-sol`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF '| Claude owner/specialist | Fable 5.2 (`claude-fable-5-2`) | `high` |' \
   "$repo_dir/.agents/rules/routing.md"
@@ -204,7 +204,7 @@ grep -qF "Review provider follows the implementation author" \
   "$repo_dir/.agents/rules/routing.md"
 grep -qF 'use Sol medium for bounded analysis or Sol high for implementation' \
   "$repo_dir/.agents/rules/routing.md"
-grep -qF 'codex exec --model gpt-6.1-sol' \
+grep -qF 'codex exec --model gpt-6.2-sol' \
   "$repo_dir/.agents/rules/delegation.md"
 grep -qF 'codex exec --model gpt-6-luna' \
   "$repo_dir/.agents/rules/delegation.md"
@@ -612,7 +612,7 @@ fi
 ln -s "$jq_bin" "$fake_bin/jq"
 FAKE_CODEX_CATALOG="$test_home/models.json"
 export FAKE_CODEX_CATALOG
-jq -n '{models: ["gpt-6.1-sol", "gpt-6-astra"] | map({
+jq -n '{models: ["gpt-6.2-sol", "gpt-6.2-astra"] | map({
   slug: ., supported_reasoning_levels:
     ["low", "medium", "high", "xhigh", "max"] | map({effort: .})
 })}' >"$FAKE_CODEX_CATALOG"
@@ -1051,7 +1051,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_STDIN="$test_home/sol.stdin" \
   "$repo_dir/scripts/sol-review.sh" "Review only." >/dev/null
 
-grep -qxF "gpt-6.1-sol" "$test_home/sol.args"
+grep -qxF "gpt-6.2-sol" "$test_home/sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/sol.args"
 grep -qxF "read-only" "$test_home/sol.args"
 grep -qF "The calling orchestrator retains final integration" "$test_home/sol.stdin"
@@ -1060,15 +1060,15 @@ grep -qF "diff --git a/tracked.txt b/tracked.txt" "$test_home/sol.stdin"
 
 # The installed Sol entry point keeps its exact model even with Astra settings.
 PATH="$fake_bin:/usr/bin:/bin" \
-  SOL_REVIEW_MODEL=gpt-6.1-sol ASTRA_REVIEW_MODEL=gpt-6-astra \
+  SOL_REVIEW_MODEL=gpt-6.2-sol ASTRA_REVIEW_MODEL=gpt-6.2-astra \
   CAPTURE_ARGS="$test_home/installed-sol.args" \
   CAPTURE_STDIN="$test_home/installed-sol.stdin" \
   "$test_home/.local/bin/sol-review" "Review only." >/dev/null
-grep -qxF "gpt-6.1-sol" "$test_home/installed-sol.args"
+grep -qxF "gpt-6.2-sol" "$test_home/installed-sol.args"
 grep -qxF 'model_reasoning_effort="xhigh"' "$test_home/installed-sol.args"
 grep -qF "reviewer of Claude-authored code" "$test_home/installed-sol.stdin"
 
-for invalid_model in gpt-6-sol gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra gpt-6.1-terra sol unavailable; do
+for invalid_model in gpt-6.1-sol gpt-6-sol gpt-5.6-sol gpt-6.2-astra gpt-6-luna gpt-5.6-terra gpt-6.1-terra sol unavailable; do
   if PATH="$fake_bin:/usr/bin:/bin" SOL_REVIEW_MODEL="$invalid_model" \
     CAPTURE_ARGS="$test_home/sol-invalid-model.args" \
     CAPTURE_STDIN="$test_home/sol-invalid-model.stdin" \
@@ -1077,33 +1077,19 @@ for invalid_model in gpt-6-sol gpt-5.6-sol gpt-6-astra gpt-6-luna gpt-5.6-terra 
     printf 'Expected Sol model override to fail closed: %s\n' "$invalid_model" >&2
     exit 1
   fi
-  grep -qF "model must be pinned to gpt-6.1-sol" "$test_home/sol-invalid-model.stderr"
+  grep -qF "model must be pinned to gpt-6.2-sol" "$test_home/sol-invalid-model.stderr"
   test ! -e "$test_home/sol-invalid-model.args"
 done
 
 # Old, malformed, failed, or effort-incompatible catalogs must prevent inference.
 printf '%s\n' '{"models":[{"slug":"gpt-5.6-sol"}]}' >"$test_home/old-models.json"
-jq '.models |= map(select(.slug != "gpt-6.1-sol")) + [{
-  slug: "gpt-6-sol", supported_reasoning_levels: [{effort: "xhigh"}]
-}]' "$FAKE_CODEX_CATALOG" >"$test_home/prior-sol-models.json"
-if PATH="$fake_bin:/usr/bin:/bin" \
-  FAKE_CODEX_CATALOG="$test_home/prior-sol-models.json" \
-  CAPTURE_ARGS="$test_home/prior-sol.args" \
-  CAPTURE_STDIN="$test_home/prior-sol.stdin" \
-  "$test_home/.local/bin/sol-review" "Review only." \
-  >"$test_home/prior-sol.stdout" 2>"$test_home/prior-sol.stderr"; then
-  printf '%s\n' "Expected GPT-6 Sol availability not to authorize GPT-6.1 Sol." >&2
-  exit 1
-else
-  test "$?" -eq 6
-fi
-grep -qF 'does not confirm gpt-6.1-sol at xhigh' "$test_home/prior-sol.stderr"
-test ! -e "$test_home/prior-sol.args"
+jq '.models[].slug |= (if . == "gpt-6.2-sol" then "gpt-6.1-sol" else "gpt-6-astra" end)' \
+  "$FAKE_CODEX_CATALOG" >"$test_home/prior-models.json"
 printf '%s\n' 'not-json' >"$test_home/invalid-models.json"
 jq '.models[].supported_reasoning_levels = [{effort: "low"}]' \
   "$FAKE_CODEX_CATALOG" >"$test_home/low-only-models.json"
 for helper in sol-review astra-review; do
-  for catalog_case in old invalid low-only failed; do
+  for catalog_case in prior old invalid low-only failed; do
     catalog_path="$test_home/$catalog_case-models.json"
     catalog_status=0
     if [ "$catalog_case" = failed ]; then
@@ -1298,7 +1284,7 @@ PATH="$fake_bin:/usr/bin:/bin" \
   CAPTURE_ARGS="$test_home/astra.args" \
   CAPTURE_STDIN="$test_home/astra.stdin" \
   "$astra_helper" "Review only." >/dev/null
-grep -qxF "gpt-6-astra" "$test_home/astra.args"
+grep -qxF "gpt-6.2-astra" "$test_home/astra.args"
 grep -qxF 'model_reasoning_effort="high"' "$test_home/astra.args"
 grep -qxF "read-only" "$test_home/astra.args"
 grep -qxF -- "--ephemeral" "$test_home/astra.args"
@@ -1320,8 +1306,9 @@ fi
 rm unrelated-astra.txt
 
 for invalid_setting in \
+  ASTRA_REVIEW_MODEL=gpt-6-astra \
   ASTRA_REVIEW_MODEL=gpt-6-sol \
-  ASTRA_REVIEW_MODEL=gpt-6.1-sol \
+  ASTRA_REVIEW_MODEL=gpt-6.2-sol \
   ASTRA_REVIEW_MODEL=gpt-6.1-terra \
   ASTRA_REVIEW_MODEL=astra \
   ASTRA_REVIEW_EFFORT=ultra \
@@ -1378,7 +1365,7 @@ PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
   "$test_home/.local/bin/sol-review" "Review only." >/dev/null || sol_status=$?
 test "$sol_status" -eq 42
 test "$(wc -l <"$test_home/sol-failure.calls")" -eq 1
-grep -qxF "gpt-6.1-sol" "$test_home/sol-failure.args"
+grep -qxF "gpt-6.2-sol" "$test_home/sol-failure.args"
 
 astra_status=0
 PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
@@ -1388,7 +1375,7 @@ PATH="$fake_bin:/usr/bin:/bin" FAKE_CODEX_STATUS=42 \
   "$astra_helper" "Review only." >/dev/null || astra_status=$?
 test "$astra_status" -eq 42
 test "$(wc -l <"$test_home/astra-failure.calls")" -eq 1
-grep -qxF "gpt-6-astra" "$test_home/astra-failure.args"
+grep -qxF "gpt-6.2-astra" "$test_home/astra-failure.args"
 
 git checkout -- tracked.txt
 if PATH="$fake_bin:/usr/bin:/bin" \

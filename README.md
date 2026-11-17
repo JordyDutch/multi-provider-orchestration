@@ -135,9 +135,9 @@ canonical [model routing guide](.agents/rules/routing.md) contains model IDs, ro
 effort levels, escalation, access checks, and live sources. The baseline keeps
 only the defaults needed for small tasks that do not load a playbook.
 
-Codex routing uses Astra, GPT-6.1 Sol (`gpt-6.1-sol`), Luna, and Terra, with Sol handling
-both everyday and complex implementation at `high` and difficult diagnosis at
-`xhigh`. Luna uses `low` for one mechanical pass or `medium` for batches. Table
+Codex routing uses GPT-6.2 Astra (`gpt-6.2-astra`), GPT-6.2 Sol (`gpt-6.2-sol`),
+Luna, and Terra. Sol handles everyday and complex implementation at `high` and
+difficult diagnosis at `xhigh`. Luna uses `low` for one mechanical pass or `medium` for batches. Table
 counts, groups, and totals use Luna `medium` with a code or CLI calculation
 whose command and output are returned for the owner to check.
 
@@ -380,12 +380,12 @@ Both wrappers reject absolute paths and parent traversal, and
 fail before a model call when diff-plus-status evidence exceeds 200,000 bytes.
 Prefer a path scope; raise
 `CLAUDE_REVIEW_MAX_DIFF_BYTES`, `SOL_REVIEW_MAX_DIFF_BYTES`, or
-`ASTRA_REVIEW_MAX_DIFF_BYTES` only explicitly. `astra-review` pins `gpt-6-astra`
+`ASTRA_REVIEW_MAX_DIFF_BYTES` only explicitly. `astra-review` pins `gpt-6.2-astra`
 at high and reads only `ASTRA_REVIEW_*` settings; it never automatically falls
 back to Sol. Use `ASTRA_REVIEW_EFFORT=xhigh` for critical Claude-authored work,
 or `max` only for the hardest unresolved judgement. `sol-review` pins
-`gpt-6.1-sol` at xhigh for normal and complex Claude-code reviews. It reads only
-`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-6.1-sol` when set. To request
+`gpt-6.2-sol` at xhigh for normal and complex Claude-code reviews. It reads only
+`SOL_REVIEW_*`; `SOL_REVIEW_MODEL` must be `gpt-6.2-sol` when set. To request
 Astra, call `astra-review` explicitly; a Sol model override can no longer select
 another model. Both helpers retain the calling orchestrator as owner.
 Both Codex routes reject unknown executable names. All review helpers reject

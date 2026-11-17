@@ -85,7 +85,7 @@ Add repository-specific rules under `## This repo` in the destination root
 For Codex-led orchestration, use Astra as the entry owner after verifying access:
 
 ```toml
-model = "gpt-6-astra"
+model = "gpt-6.2-astra"
 model_reasoning_effort = "high"
 ```
 
@@ -93,7 +93,7 @@ Use `high` normally and `xhigh` for a decisive hard stage. To select the owner
 for one session:
 
 ```sh
-codex --model gpt-6-astra -c 'model_reasoning_effort="high"'
+codex --model gpt-6.2-astra -c 'model_reasoning_effort="high"'
 ```
 
 Sol handles bounded and complex execution and regular reviews; Luna handles
