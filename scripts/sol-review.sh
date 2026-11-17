@@ -6,26 +6,26 @@ case "$(basename "$0")" in
   astra-review|astra-review.sh)
     reviewer="Astra"
     env_prefix="ASTRA_REVIEW"
-    model="${ASTRA_REVIEW_MODEL:-gpt-6-astra}"
+    model="${ASTRA_REVIEW_MODEL:-gpt-6.2-astra}"
     effort="${ASTRA_REVIEW_EFFORT:-high}"
     review_mode="${ASTRA_REVIEW_MODE:-review}"
     diff_path="${ASTRA_REVIEW_DIFF_PATH:-}"
     max_diff_bytes="${ASTRA_REVIEW_MAX_DIFF_BYTES:-200000}"
-    if [ "$model" != "gpt-6-astra" ]; then
-      echo "Astra review unavailable: model must be pinned to gpt-6-astra." >&2
+    if [ "$model" != "gpt-6.2-astra" ]; then
+      echo "Astra review unavailable: model must be pinned to gpt-6.2-astra." >&2
       exit 64
     fi
     ;;
   sol-review|sol-review.sh)
     reviewer="Sol"
     env_prefix="SOL_REVIEW"
-    model="${SOL_REVIEW_MODEL:-gpt-6.1-sol}"
+    model="${SOL_REVIEW_MODEL:-gpt-6.2-sol}"
     effort="${SOL_REVIEW_EFFORT:-xhigh}"
     review_mode="${SOL_REVIEW_MODE:-review}"
     diff_path="${SOL_REVIEW_DIFF_PATH:-}"
     max_diff_bytes="${SOL_REVIEW_MAX_DIFF_BYTES:-200000}"
-    if [ "$model" != "gpt-6.1-sol" ]; then
-      echo "Sol review unavailable: model must be pinned to gpt-6.1-sol; use astra-review for Astra." >&2
+    if [ "$model" != "gpt-6.2-sol" ]; then
+      echo "Sol review unavailable: model must be pinned to gpt-6.2-sol; use astra-review for Astra." >&2
       exit 64
     fi
     ;;

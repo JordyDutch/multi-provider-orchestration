@@ -39,7 +39,7 @@ before the first hand-off. If pipelines are disallowed, use a private temporary
 catalog file and run `jq` separately. Never dump the raw catalog.
 
 ```sh
-codex exec --model gpt-6.1-sol -c 'model_reasoning_effort="high"' \
+codex exec --model gpt-6.2-sol -c 'model_reasoning_effort="high"' \
   --sandbox read-only -C /path/to/worktree -o /path/to/result.txt \
   < /path/to/brief.md
 codex exec --model gpt-6-luna -c 'model_reasoning_effort="low"' \

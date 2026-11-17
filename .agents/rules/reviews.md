@@ -24,7 +24,7 @@ review necessary. Do not use a vague `substantial` label as the only trigger.
 | Complex or cross-cutting Codex-authored work | Fable 5.2 (`claude-fable-5-2`) at xhigh |
 | Normal bounded Claude-authored behavior | Sol at xhigh |
 | Complex or cross-cutting Claude-authored work | Sol at xhigh |
-| Exceptionally hard, unresolved, or critical Claude-authored work | Astra (`gpt-6-astra`) at xhigh; max only for the hardest unresolved judgement |
+| Exceptionally hard, unresolved, or critical Claude-authored work | Astra (`gpt-6.2-astra`) at xhigh; max only for the hardest unresolved judgement |
 | Critical Codex-authored work | Fable 5.2 at xhigh; add Opus 5.5 at high only when a second Claude perspective materially reduces risk |
 
 These risk-based routes follow the implementation author, not the orchestrator.
@@ -92,7 +92,7 @@ A declined Fable review follows [fable.md](fable.md).
 
 ## Codex helpers from Claude
 
-`sol-review` pins `gpt-6.1-sol` at xhigh; `astra-review` pins `gpt-6-astra`
+`sol-review` pins `gpt-6.2-sol` at xhigh; `astra-review` pins `gpt-6.2-astra`
 at high (request xhigh for an exceptional review). Both use ephemeral read-only
 sessions and keep the calling orchestrator as owner, including Astra when
 reviewing Claude contributions. The shared script dispatches by executable name.

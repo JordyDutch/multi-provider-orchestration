@@ -46,7 +46,7 @@ Mandatory reviews apply regardless of savings.
   `ORCHESTRATION.md` adjacent to this file and read only the linked playbooks
   relevant to the task.
 - For the no-playbook route in Codex-led work, use Luna (`gpt-6-luna`) at `low`
-  for mechanical work or `medium` for multiple items; Sol (`gpt-6.1-sol`) at
+  for mechanical work or `medium` for multiple items; Sol (`gpt-6.2-sol`) at
   `medium` when bounded judgement is needed. In Claude-led work, the owner may
   use those specialists or pinned Haiku and Sonnet agents.
 - Astra owns Codex orchestration and delegates by fit to Sol, Luna, Terra, Opus,
